@@ -1,0 +1,37 @@
+
+=================================== ERRORS ====================================
+_________ ERROR collecting apps/char-card-manager/tests/test_main.py __________
+ImportError while importing test module 'c:\Users\FHiro\Projects\ai-agents\apps\char-card-manager\tests\test_main.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps\char-card-manager\tests\test_main.py:2: in <module>
+    from src.main import create_character_card, list_character_cards
+E   ModuleNotFoundError: No module named 'src'
+______________ ERROR collecting apps/speckit/tests/test_main.py _______________
+ImportError while importing test module 'c:\Users\FHiro\Projects\ai-agents\apps\speckit\tests\test_main.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps\speckit\tests\test_main.py:2: in <module>
+    from src.main import reverse_string
+E   ModuleNotFoundError: No module named 'src'
+________ ERROR collecting apps/trend-illustrator/tests/test_plotter.py ________
+ImportError while importing test module 'c:\Users\FHiro\Projects\ai-agents\apps\trend-illustrator\tests\test_plotter.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps\trend-illustrator\tests\test_plotter.py:4: in <module>
+    from src.plotter import plot_trend
+E   ModuleNotFoundError: No module named 'src'
+_______ ERROR collecting apps/voice-changer/tests/test_voice_changer.py _______
+ImportError while importing test module 'c:\Users\FHiro\Projects\ai-agents\apps\voice-changer\tests\test_voice_changer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps\voice-changer\tests\test_voice_changer.py:5: in <module>
+    from scipy.io import wavfile
+E   ModuleNotFoundError: No module named 'scipy'
+=========================== short test summary info ===========================
+ERROR apps/char-card-manager/tests/test_main.py
+ERROR apps/speckit/tests/test_main.py
+ERROR apps/trend-illustrator/tests/test_plotter.py
+ERROR apps/voice-changer/tests/test_voice_changer.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!
+4 errors in 0.57s

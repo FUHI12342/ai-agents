@@ -1,0 +1,14 @@
+﻿[GUARD] lock acquired: C:\Users\FHiro\Projects\ai-agents\scripts\daily_run.lock
+[INFO] Start : 2026/01/05 23:00:00
+[INFO] Script: C:\Users\FHiro\Projects\ai-agents\scripts\daily_run.ps1
+[INFO] Root  : C:\Users\FHiro\Projects\ai-agents
+[INFO] Python: C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ENV ] PSVersion: 5.1.19041.6456
+[ENV ] PSEdition: Desktop
+
+[FATAL] PowerShell exception
+[FATAL] Message: Traceback (most recent call last):
+[FATAL] Type   : System.Management.Automation.RemoteException
+[FATAL] Line   : 114
+[FATAL] Code   :   $traderMode = & $python -c "from trader.config import load_config; print(load_config().trader_mode)" 2>$null
+

@@ -1,0 +1,2 @@
+run_id,timestamp,order_id,client_order_id,symbol,type,side,amount,price,cost,filled,remaining,avg_price,fee,status,reason
+15f6e33e,1767620878450,paper_1,,BTC/USDT,market,buy,0.0006599340065993401,100010.0,66.00000000000001,0.0006599340065993401,0.0,100010.0,0.03300000000000001,closed,

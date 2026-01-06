@@ -1,0 +1,27 @@
+﻿2025-12-21 19:19:07 === Run Session Start ===
+2025-12-21 19:19:07 Session: morning
+2025-12-21 19:19:07 ToAddr: takeshiminaminoshima1@gmail.com
+2025-12-21 19:19:07 Preset: good_20_100_risk_0_5
+2025-12-21 19:19:07 RiskPct: 0.5
+2025-12-21 19:19:07 ShortWindow: 20
+2025-12-21 19:19:07 LongWindow: 100
+2025-12-21 19:19:07 LlmMode: auto
+2025-12-21 19:19:07 DryRun: False
+2025-12-21 19:19:07 UpdateData: True
+2025-12-21 19:19:07 UpdateSymbol: 
+2025-12-21 19:19:07 FailOnDataUpdateError: False
+2025-12-21 19:19:07 Activate.ps1 not found, using system python
+2025-12-21 19:19:07 Using system Python: C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe
+2025-12-21 19:19:07 ProjectRoot: C:\Users\FHiro\Projects\ai-agents
+2025-12-21 19:19:07 PWD: C:\Users\FHiro\Projects\ai-agents
+2025-12-21 19:19:07 Updating data for BTCUSDT...
+2025-12-21 19:19:07 Command: & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.data_updater --symbol BTCUSDT --interval 1d
+2025-12-21 19:19:09 Exception: Python failed (exit=1): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.data_updater --symbol BTCUSDT --interval 1d
+2025-12-21 19:19:09 Data update failed for BTCUSDT: Python failed (exit=1): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.data_updater --symbol BTCUSDT --interval 1d
+2025-12-21 19:19:09 Updating data for ETHUSDT...
+2025-12-21 19:19:09 Command: & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.data_updater --symbol ETHUSDT --interval 1d
+2025-12-21 19:19:10 Exception: Python failed (exit=1): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.data_updater --symbol ETHUSDT --interval 1d
+2025-12-21 19:19:10 Data update failed for ETHUSDT: Python failed (exit=1): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.data_updater --symbol ETHUSDT --interval 1d
+2025-12-21 19:19:10 Generating morning report...
+2025-12-21 19:19:10 Command: & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.daily_report morning --preset good_20_100_risk_0_5 --symbols BTCUSDT,ETHUSDT --llm-mode auto
+2025-12-21 19:19:10 Exception: Python failed (exit=1): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.daily_report morning --preset good_20_100_risk_0_5 --symbols BTCUSDT,ETHUSDT --llm-mode auto

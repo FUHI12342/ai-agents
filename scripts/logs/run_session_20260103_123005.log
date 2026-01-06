@@ -1,0 +1,21 @@
+﻿2026-01-03 12:30:05 === Run Session Start ===
+2026-01-03 12:30:05 Session: noon
+2026-01-03 12:30:05 ToAddr: takeshiminaminoshima1@gmail.com
+2026-01-03 12:30:05 Preset: good_20_100_risk_0_5
+2026-01-03 12:30:05 RiskPct: 0.5
+2026-01-03 12:30:05 ShortWindow: 20
+2026-01-03 12:30:05 LongWindow: 100
+2026-01-03 12:30:05 LlmMode: auto
+2026-01-03 12:30:05 DryRun: False
+2026-01-03 12:30:05 UpdateData: False
+2026-01-03 12:30:05 UpdateSymbol: 
+2026-01-03 12:30:05 FailOnDataUpdateError: False
+2026-01-03 12:30:05 Using Python: C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+2026-01-03 12:30:05 ProjectRoot: C:\Users\FHiro\Projects\ai-agents
+2026-01-03 12:30:05 PWD: C:\Users\FHiro\Projects\ai-agents
+2026-01-03 12:30:05 Generating noon report...
+2026-01-03 12:30:05 Command: & C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe -m trader.daily_report noon --preset good_20_100_risk_0_5 --symbols BTCUSDT --llm-mode auto
+2026-01-03 12:30:07 Creds loaded from User env (has_user=True, pw_len=16)
+2026-01-03 12:30:07 Sending noon report to takeshiminaminoshima1@gmail.com...
+2026-01-03 12:30:11 Gmail send success: GMAIL_SEND_SUCCESS
+2026-01-03 12:30:11 Session noon completed

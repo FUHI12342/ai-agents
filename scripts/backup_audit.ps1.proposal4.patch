@@ -1,0 +1,117 @@
+--- a/scripts/backup_audit.ps1
++++ b/scripts/backup_audit.ps1
+@@ -1,40 +1,40 @@
+ # Backup audit script for ai-agents repository
+ # This script checks backup directories and logs audit information
+ 
+ param(
+-    [string]$LogFile = "backup_audit.log"
++    [string]$LogFile = "reports\nightly\backup_audit_latest.md"
+ )
+ 
+ # Set the repository root
+-$RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
++$RepoRoot = Split-Path -Parent $PSScriptRoot
+ 
++# Create reports directory if it doesn't exist
++$ReportsDir = Join-Path $RepoRoot "reports\nightly"
++if (-not (Test-Path $ReportsDir)) {
++    New-Item -ItemType Directory -Path $ReportsDir -Force | Out-Null
++}
++
++# Create archive directory
++$ArchiveDir = Join-Path $ReportsDir "archive"
++if (-not (Test-Path $ArchiveDir)) {
++    New-Item -ItemType Directory -Path $ArchiveDir -Force | Out-Null
++}
++
++# Get all apps
++$AppsDir = Join-Path $RepoRoot "apps"
++$Apps = Get-ChildItem $AppsDir -Directory | Select-Object -ExpandProperty Name
++
+ # Function to audit backups
+ function Audit-Backups {
+     param([string]$AppName)
+ 
+     $BackupDir = Join-Path $RepoRoot "apps\$AppName\backups"
+     if (Test-Path $BackupDir) {
+         $BackupFiles = Get-ChildItem $BackupDir -Recurse -File
+         $FileCount = $BackupFiles.Count
+         $TotalSize = ($BackupFiles | Measure-Object -Property Length -Sum).Sum
+ 
+         Write-Host "App: $AppName"
+         Write-Host "Backup files: $FileCount"
+         Write-Host "Total size: $([math]::Round($TotalSize / 1MB, 2)) MB"
+         Write-Host "Latest backup: $(($BackupFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 1).LastWriteTime)"
+         Write-Host "---"
+     } else {
+         Write-Host "No backup directory found for $AppName"
+     }
+ }
+ 
+ # Audit all apps
+-$Apps = @("healthhub", "ideaminer", "watch-connector")
+-foreach ($App in $Apps) {
+-    Audit-Backups -AppName $App
+-}
+-
+ # Log to file
+-$LogPath = Join-Path $RepoRoot $LogFile
+-$Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+-"[$Timestamp] Backup audit completed" | Out-File -FilePath $LogPath -Append
++$Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
++$Report = @"
++# Backup Audit Report - $Timestamp
++Repository: $RepoRoot
++
++## Summary
++- Total apps audited: $($Apps.Count)
++
++## Details
++"@
++$TotalBackups = 0
++$AppsWithBackups = 0
++foreach ($App in $Apps) {
++    $BackupDir = Join-Path $RepoRoot "apps\$App\backups"
++    if (Test-Path $BackupDir) {
++        $BackupFiles = Get-ChildItem $BackupDir -Recurse -File
++        $FileCount = $BackupFiles.Count
++        $TotalSize = ($BackupFiles | Measure-Object -Property Length -Sum).Sum
++        $LatestBackup = if ($BackupFiles) { ($BackupFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 1).LastWriteTime } else { "None" }
++
++        $Report += @"
++
++### $App
++- Backup directory: Found
++- Backup files: $FileCount
++- Total size: $([math]::Round($TotalSize / 1MB, 2)) MB
++- Latest backup: $LatestBackup
++
++"@
++        $TotalBackups += $FileCount
++        $AppsWithBackups++
++    } else {
++        $Report += @"
++
++### $App
++- Backup directory: Not found
++
++"@
++    }
++}
++$Report += @"
+ 
+ ## Completion
+ Backup audit completed at $Timestamp
+ - Apps with backups: $AppsWithBackups
+ - Total backup files: $TotalBackups
+ "@
++# Write to latest
++$LatestPath = Join-Path $ReportsDir "backup_audit_latest.md"
++$Report | Out-File -FilePath $LatestPath -Encoding UTF8
++# Write to archive
++$ArchiveTimestamp = Get-Date -Format "yyyyMMdd_HHmmss"
++$ArchivePath = Join-Path $ArchiveDir "backup_audit_$ArchiveTimestamp.md"
++$Report | Out-File -FilePath $ArchivePath -Encoding UTF8
++Write-Host "Backup audit completed. Report saved to $LatestPath and $ArchivePath"
+ 

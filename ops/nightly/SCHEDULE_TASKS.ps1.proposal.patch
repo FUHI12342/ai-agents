@@ -1,0 +1,66 @@
+--- a/ops/nightly/SCHEDULE_TASKS.ps1
++++ b/ops/nightly/SCHEDULE_TASKS.ps1
+@@ -1,27 +1,47 @@
+ # Schedule nightly tasks for ai-agents repository
+ # This script creates scheduled tasks for automated testing and backup auditing
+ 
+ $repo = "C:\Users\FHiro\Projects\ai-agents"
+ 
+-# Create task for running all tests at 02:00
+-schtasks /Create /TN "AI-Agents Nightly Tests" /SC DAILY /ST 02:00 `
+- /TR "powershell -NoProfile -ExecutionPolicy Bypass -File `"$repo\scripts\run_all_tests.ps1`"" `
+- /F /RL HIGHEST /RU $env:USERNAME
++# Delete existing tasks if they exist
++$tasksToDelete = @(
++    "\AI-Agents Nightly Tests",
++    "\AI-Agents Backup Audit",
++    "\AI-Agents\Nightly Tests",
++    "\AI-Agents\Backup Run",
++    "\AI-Agents\Backup Audit"
++)
++foreach ($task in $tasksToDelete) {
++    try {
++        schtasks /Delete /TN $task /F 2>$null
++        Write-Host "Deleted existing task: $task"
++    } catch {
++        # Ignore errors if task doesn't exist
++    }
++}
+ 
+-# Create task for backup audit at 02:30
+-schtasks /Create /TN "AI-Agents Backup Audit" /SC DAILY /ST 02:30 `
+- /TR "powershell -NoProfile -ExecutionPolicy Bypass -File `"$repo\scripts\backup_audit.ps1`"" `
+- /F /RL HIGHEST /RU $env:USERNAME
++# Create task for running all tests at 02:00
++schtasks /Create /TN "\AI-Agents\Nightly Tests" /SC DAILY /ST 02:00 `
++ /TR "cmd.exe /c \"cd /d $repo && powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_all_tests.ps1\"" `
++ /F /RL HIGHEST /RU SYSTEM
++
++# Create task for backup run at 02:15
++schtasks /Create /TN "\AI-Agents\Backup Run" /SC DAILY /ST 02:15 `
++ /TR "cmd.exe /c \"cd /d $repo && powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\backup_run_all.ps1\"" `
++ /F /RL HIGHEST /RU SYSTEM
++
++# Create task for backup audit at 02:30
++schtasks /Create /TN "\AI-Agents\Backup Audit" /SC DAILY /ST 02:30 `
++ /TR "cmd.exe /c \"cd /d $repo && powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\backup_audit.ps1\"" `
++ /F /RL HIGHEST /RU SYSTEM
+ 
+ # Query scheduled tasks
+ Write-Host "Scheduled tasks created:"
+-schtasks /Query /TN "AI-Agents Nightly Tests"
+-schtasks /Query /TN "AI-Agents Backup Audit"
++schtasks /Query /TN "\AI-Agents\Nightly Tests"
++schtasks /Query /TN "\AI-Agents\Backup Run"
++schtasks /Query /TN "\AI-Agents\Backup Audit"
+ 
+ # Optional: Run tasks immediately for testing
+ # schtasks /Run /TN "AI-Agents Nightly Tests"
+ # schtasks /Run /TN "AI-Agents Backup Audit"
+ 
+ # Optional: Delete tasks
+-# schtasks /Delete /TN "AI-Agents Nightly Tests" /F
+-# schtasks /Delete /TN "AI-Agents Backup Audit" /F
++schtasks /Delete /TN "\AI-Agents\Nightly Tests" /F
++schtasks /Delete /TN "\AI-Agents\Backup Run" /F
++schtasks /Delete /TN "\AI-Agents\Backup Audit" /F

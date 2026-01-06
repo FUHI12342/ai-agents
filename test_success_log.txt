@@ -1,0 +1,13 @@
+
+=================================== ERRORS ====================================
+_______ ERROR collecting apps/voice-changer/tests/test_voice_changer.py _______
+ImportError while importing test module 'c:\Users\FHiro\Projects\ai-agents\apps\voice-changer\tests\test_voice_changer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps\voice-changer\tests\test_voice_changer.py:6: in <module>
+    from src.voice_changer import process_audio
+E   ModuleNotFoundError: No module named 'src'
+=========================== short test summary info ===========================
+ERROR apps/voice-changer/tests/test_voice_changer.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.85s

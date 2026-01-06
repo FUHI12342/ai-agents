@@ -1,0 +1,21 @@
+﻿[INFO] Start : 2026/01/05 10:12:48
+[INFO] Script: C:\Users\FHiro\Projects\ai-agents\scripts\daily_run.ps1
+[INFO] Root  : C:\Users\FHiro\Projects\ai-agents
+[INFO] Python: C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ENV ] PSVersion: 5.1.19041.6456
+[ENV ] PSEdition: Desktop
+[ENV ] PID     : 47232
+[ENV ] CWD     : C:\Users\FHiro\Projects\ai-agents
+[ENV ] PATH    : C:\Program Files (x86)\Razer Chroma SDK\bin;C:\Program Files\Razer Chroma SDK\bin;C:\Program Files (x86)\Razer\ChromaBroadcast\bin;C:\Program Files\Razer\ChromaBroadcast\bin;C:\Program Files (x86)\Common Files\Intel\Shared Files\cpp\bin\Intel64;C:\Program Files (x86)\Common Files\Intel\Shared Libraries\redist\intel64\compiler;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Windows\system32\config\systemprofile\AppData\Local\Microsoft\WindowsApps;C:\Users\FHiro\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\FHiro\AppData\Local\Programs\Python\Python310\;C:\Users\FHiro\AppData\Local\Microsoft\WindowsApps;C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;C:\Program Files\Git\cmd;C:\Program Files\Tailscale\;C:\Users\FHiro\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\FHiro\AppData\Local\Programs\Python\Python310\;C:\Users\FHiro\AppData\Local\Microsoft\WindowsApps;C:\Users\FHiro\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\FHiro\AppData\Local\Programs\Ollama;c:\Users\FHiro\.vscode\extensions\ms-python.debugpy-2025.18.0-win32-x64\bundled\scripts\noConfigScripts
+
+[STEP] python_version
+[EXE ] C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ARGV] --version
+
+[FATAL] PowerShell exception
+[FATAL] Type   : System.Management.Automation.RuntimeException
+[FATAL] Message: 変数 '$prevEap' は、設定されていないために取得できません。
+[FATAL] Script : C:\Users\FHiro\Projects\ai-agents\scripts\daily_run.ps1
+[FATAL] Line   : 64
+[FATAL] Code   :     $ErrorActionPreference = $prevEap
+

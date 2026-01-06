@@ -1,0 +1,21 @@
+﻿2025-12-29 20:30:02 === Run Session Start ===
+2025-12-29 20:30:02 Session: night
+2025-12-29 20:30:02 ToAddr: takeshiminaminoshima1@gmail.com
+2025-12-29 20:30:02 Preset: good_20_100_risk_0_5
+2025-12-29 20:30:02 RiskPct: 0.5
+2025-12-29 20:30:02 ShortWindow: 20
+2025-12-29 20:30:02 LongWindow: 100
+2025-12-29 20:30:02 LlmMode: auto
+2025-12-29 20:30:02 DryRun: False
+2025-12-29 20:30:02 UpdateData: False
+2025-12-29 20:30:02 UpdateSymbol: 
+2025-12-29 20:30:02 FailOnDataUpdateError: False
+2025-12-29 20:30:02 Using Python: C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+2025-12-29 20:30:02 ProjectRoot: C:\Users\FHiro\Projects\ai-agents
+2025-12-29 20:30:02 PWD: C:\Users\FHiro\Projects\ai-agents
+2025-12-29 20:30:02 Generating night report...
+2025-12-29 20:30:02 Command: & C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe -m trader.daily_report night --preset good_20_100_risk_0_5 --symbols BTCUSDT --llm-mode auto
+2025-12-29 20:30:05 Creds loaded from User env (has_user=True, pw_len=16)
+2025-12-29 20:30:05 Sending night report to takeshiminaminoshima1@gmail.com...
+2025-12-29 20:30:09 Gmail send success: GMAIL_SEND_SUCCESS
+2025-12-29 20:30:09 Session night completed

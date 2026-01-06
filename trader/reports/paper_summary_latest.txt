@@ -1,0 +1,11 @@
+PaperTrade Simulation (MA cross) 2026/01/06 14:13:01
+JPY/USDT assumed: 150.0000
+
+[BTCUSDT] timeframe=1h candles=605 last=2026-01-06 05:00:00 UTC
+- equity_jpy: 10,003.66  return: 0.04%  maxDD: -1.99%
+- cash_quote: 49.313124  pos_base: 0.000185  new_trades: 0
+
+Files
+- latest trades : C:\Users\FHiro\Projects\ai-agents\trader\reports\paper_trades_latest.csv
+- history trades: C:\Users\FHiro\Projects\ai-agents\trader\reports\paper_trades_history.csv
+- state         : D:\ai-data\paper_state.json

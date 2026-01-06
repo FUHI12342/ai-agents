@@ -1,0 +1,16 @@
+Go/No-Go Checklist Results
+Timestamp: 1767676383661
+Summary: READY_TESTNET: False (api_not_configured, remaining=3)
+
+Checks:
+  order_management: PASS
+  reconcile: PASS
+  risk_guard: FAIL
+  operations: PASS
+  paper_yahoo: FAIL
+  api_configured: FAIL
+
+Next Steps:
+- Set API keys in .env: BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET (mode=testnet)
+- Fix risk_guard: Check currency units in daily loss calculation.
+- Fix paper_yahoo: Ensure paper_yahoo_sim runs successfully.

@@ -1,0 +1,12 @@
+numpy
+pandas
+ccxt
+python-dotenv
+pytest
+openai
+google-api-python-client
+requests
+beautifulsoup4
+yfinance
+websockets
+tqdm

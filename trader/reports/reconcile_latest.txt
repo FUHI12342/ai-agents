@@ -1,0 +1,6 @@
+﻿Reconcile Summary
+----------------------------------------
+ok=false
+reason=SKIPPED_API_NOT_CONFIGURED
+mode=testnet
+timestamp=2026-01-06T14:13:03.5400377+09:00

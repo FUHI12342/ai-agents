@@ -1,0 +1,148 @@
+﻿param([switch]$NoMail)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+
+# --- script path resolve (StrictMode-safe) ---
+$scriptPath = $null
+if ($PSCommandPath) { $scriptPath = $PSCommandPath }
+elseif ($MyInvocation -and $MyInvocation.MyCommand -and $MyInvocation.MyCommand.Path) { $scriptPath = $MyInvocation.MyCommand.Path }
+if (-not $scriptPath) { throw "Cannot determine script path." }
+
+$scriptDir   = Split-Path -Parent $scriptPath
+$projectRoot = (Resolve-Path (Join-Path $scriptDir "..")).Path
+Set-Location -Path $projectRoot
+
+$python    = Join-Path $projectRoot ".venv\Scripts\python.exe"
+$logDir    = Join-Path $scriptDir "logs"
+$reportDir = Join-Path $projectRoot "trader\reports"
+$bodyDir   = Join-Path $projectRoot "reports"
+
+New-Item -ItemType Directory -Force -Path $logDir    | Out-Null
+New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+New-Item -ItemType Directory -Force -Path $bodyDir   | Out-Null
+
+$ts    = Get-Date -Format "yyyyMMdd_HHmmss"
+$today = Get-Date -Format "yyyyMMdd"
+$logFile  = Join-Path $logDir  ("daily_run_{0}.log" -f $ts)
+$bodyFile = Join-Path $bodyDir ("daily_body_{0}.txt" -f $ts)
+
+function Write-Log([string]$m) { Add-Content -Path $logFile -Value $m -Encoding UTF8 }
+
+function To-Int($v) {
+  if ($null -eq $v) { return 0 }
+  if ($v -is [array]) {
+    if ($v.Count -eq 0) { return 0 }
+    return [int]$v[-1]   # 陟｢・ｵ邵ｺ・ｮ邵ｺ貅假ｽ∫ｸｲ譴ｧ諤呵募ｾ後・髫補悪・ｴ・ｰ邵ｲ髦ｪ・定ｬ暦ｽ｡騾包ｽｨ
+  }
+  return [int]$v
+}
+
+# 隨倥・纃ｾ髫輔・・ｼ螢ｹ・・ｸｺ・ｮ鬮｢・｢隰ｨ・ｰ邵ｺ・ｯ邵ｲ譎ｯnt邵ｺ・ｰ邵ｺ莉｣ﾂ髦ｪ・定ｬ鯉ｽｻ邵ｺ蜻ｻ・ｼ蝓滂ｽｨ蜻趣ｽｺ髢繝ｻ陷牙ｸ吶・ Write-Host 邵ｺ・ｫ鬨ｾ繝ｻ窶ｲ邵ｺ蜻ｻ・ｼ繝ｻ
+function Invoke-Exe([string]$step, [string]$exe, [string[]]$argv) {
+  Write-Log ""
+  Write-Log ("[STEP] {0}" -f $step)
+  Write-Log ("[EXE ] {0}" -f $exe)
+  Write-Log ("[ARGV] {0}" -f ($argv -join " "))
+
+  if (-not (Test-Path -LiteralPath $exe)) {
+    Write-Log ("[ERR ] exe not found: {0}" -f $exe)
+    return 9009
+  }
+
+  $out = & {
+    $ErrorActionPreference = "Continue"
+    & $exe @argv 2>&1
+  }
+  $rc = [int]$LASTEXITCODE
+
+  foreach ($line in $out) {
+    if ($null -ne $line -and "$line" -ne "") { Write-Host $line }
+    if ($null -ne $line) { Write-Log $line }
+  }
+  Write-Log ("[RC  ] {0}" -f $rc)
+  return [int]$rc
+}
+
+# rc 陞溽判辟夂ｸｺ・ｯ陟｢繝ｻ笘・崕譎・ｄ陋ｹ繝ｻ
+$rc_py = 0; $rc_data = 0; $rc_bt1 = 0; $rc_bt2 = 0; $rc_mail = 0
+
+try {
+  Write-Log ("[INFO] Start : {0}" -f (Get-Date))
+  Write-Log ("[INFO] Script: {0}" -f $scriptPath)
+  Write-Log ("[INFO] Root  : {0}" -f $projectRoot)
+  Write-Log ("[INFO] Python: {0}" -f $python)
+  Write-Log ("[ENV ] PSVersion: {0}" -f $PSVersionTable.PSVersion)
+  Write-Log ("[ENV ] PSEdition: {0}" -f $PSVersionTable.PSEdition)
+
+  $rc_py = Invoke-Exe "python_version" $python @("--version")
+
+  $rc_data = Invoke-Exe "download_market_data" $python @(
+    "-m","trader.download_market_data",
+    "--symbols","^GSPC","^N225","^IXIC","USDJPY=X",
+    "--start","2010-01-01",
+    "--strict"
+  )
+
+  $rc_bt1 = Invoke-Exe "backtest risk=0.25" $python @(
+    "-m","trader.run_backtest_multi_assets",
+    "--risk-pct","0.25",
+    "--ma-short","20",
+    "--ma-long","100",
+    "--report-prefix","daily"
+  )
+
+  $rc_bt2 = Invoke-Exe "backtest risk=0.50" $python @(
+    "-m","trader.run_backtest_multi_assets",
+    "--risk-pct","0.50",
+    "--ma-short","20",
+    "--ma-long","100",
+    "--report-prefix","daily"
+  )
+
+    # --- compose mail body & write file (no BOM) ---
+  $body = @()
+  $body += ("Daily Trader Report {0}" -f (Get-Date))
+  $body += ""
+  $body += "Status"
+  $body += ("- python --version : {0}" -f $rc_py)
+  $body += ("- data update      : {0}" -f $rc_data)
+  $body += ("- backtest 0.25    : {0}" -f $rc_bt1)
+  $body += ("- backtest 0.50    : {0}" -f $rc_bt2)
+  $body += ""
+  $body += "Log file"
+  $body += ("- {0}" -f $logFile)
+
+  $text = ($body -join "`r`n")
+  [System.IO.File]::WriteAllText($bodyFile, $text, (New-Object System.Text.UTF8Encoding($false)))
+  Write-Log ("[INFO] Body file written: {0} exists={1}" -f $bodyFile, (Test-Path -LiteralPath $bodyFile))
+if (-not $NoMail) {
+    $rc_mail = Invoke-Exe "notify_gmail" $python @(
+      "-m","trader.notify_gmail",
+      "--to","takeshiminaminoshima1@gmail.com",
+      "--subject","Daily Trader Report",
+      "--body-file",$bodyFile,
+      "--body-encoding","utf-8"
+    )
+  }
+
+  # ---- FINALIZE (robust) ----
+  $rcs = @((To-Int $rc_py),(To-Int $rc_data),(To-Int $rc_bt1),(To-Int $rc_bt2),(To-Int $rc_mail))
+  $final = 0
+  foreach ($x in $rcs) { if ($x -ne 0) { $final = 1; break } }
+  Write-Log ("[INFO] RC_SUMMARY: py={0} data={1} bt1={2} bt2={3} mail={4} -> final={5}" -f $rcs[0],$rcs[1],$rcs[2],$rcs[3],$rcs[4],$final)
+  Write-Log ("[INFO] End   : {0}" -f (Get-Date))
+  exit $final
+}
+catch {
+  Write-Log ""
+  Write-Log "[FATAL] PowerShell exception"
+  Write-Log ("[FATAL] Message: {0}" -f $_.Exception.Message)
+  Write-Log ("[FATAL] Type   : {0}" -f $_.Exception.GetType().FullName)
+  Write-Log ("[FATAL] Line   : {0}" -f $_.InvocationInfo.ScriptLineNumber)
+  Write-Log ("[FATAL] Code   : {0}" -f $_.InvocationInfo.Line)
+  Write-Output $_.Exception.Message
+  exit 1
+}
+

@@ -1,0 +1,15 @@
+﻿# Backup Audit Report - 2026-01-06 02:30:02
+Repository: C:\Users\FHiro\Projects\ai-agents
+
+| App | BackupDir | LatestArtifact | LastWriteTime | Status |
+|---|---|---|---|---|
+| char-card-manager | C:\Users\FHiro\Projects\ai-agents\apps\char-card-manager\backups | release_2026-01-06_02-15-02.zip | 2026-01-06 02:15:02 | OK_ZIP |
+| healthhub | C:\Users\FHiro\Projects\ai-agents\apps\healthhub\backups | healthhub_backup_20260106_021503.zip | 2026-01-06 02:15:03 | OK_ZIP |
+| ideaminer | C:\Users\FHiro\Projects\ai-agents\apps\ideaminer\backups | - | - | EMPTY |
+| netdefender | C:\Users\FHiro\Projects\ai-agents\apps\netdefender\backups | - | - | EMPTY |
+| roo-like | C:\Users\FHiro\Projects\ai-agents\apps\roo-like\backups | roo-like_release_20260106_021504.zip | 2026-01-06 02:15:04 | OK_ZIP |
+| speckit | C:\Users\FHiro\Projects\ai-agents\apps\speckit\backups | - | - | EMPTY |
+| trend-illustrator | C:\Users\FHiro\Projects\ai-agents\apps\trend-illustrator\backups | backup_20260106_021505 | 2026-01-06 02:15:05 | OK_DIR |
+| voice-changer | C:\Users\FHiro\Projects\ai-agents\apps\voice-changer\backups | backup_20260106_021506 | 2026-01-06 02:15:06 | OK_DIR |
+| watch-connector | C:\Users\FHiro\Projects\ai-agents\apps\watch-connector\backups | watch-connector_backup_20260106_021507.zip | 2026-01-06 02:15:07 | OK_ZIP |
+

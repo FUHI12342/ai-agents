@@ -1,0 +1,26 @@
+﻿2025-12-21 23:11:00 === Run Session Start ===
+2025-12-21 23:11:00 Session: morning
+2025-12-21 23:11:00 ToAddr: takeshiminaminoshima1@gmail.com
+2025-12-21 23:11:00 Preset: good_20_100_risk_0_5
+2025-12-21 23:11:00 RiskPct: 0.5
+2025-12-21 23:11:00 ShortWindow: 20
+2025-12-21 23:11:00 LongWindow: 100
+2025-12-21 23:11:00 LlmMode: auto
+2025-12-21 23:11:00 DryRun: False
+2025-12-21 23:11:00 UpdateData: True
+2025-12-21 23:11:00 UpdateSymbol: 
+2025-12-21 23:11:00 FailOnDataUpdateError: False
+2025-12-21 23:11:00 Activate.ps1 not found, using system python
+2025-12-21 23:11:00 Using system Python: C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe
+2025-12-21 23:11:00 ProjectRoot: C:\Users\FHiro\Projects\ai-agents
+2025-12-21 23:11:00 PWD: C:\Users\FHiro\Projects\ai-agents
+2025-12-21 23:11:01 UpdateData is enabled. Updating data for symbols: BTCUSDT,ETHUSDT
+2025-12-21 23:11:01 Command: & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.update_data --symbols BTCUSDT,ETHUSDT --interval 1d
+2025-12-21 23:11:02 Exception: Python failed (exit=2): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.update_data --symbols BTCUSDT,ETHUSDT --interval 1d
+2025-12-21 23:11:02 WARN: Data update failed: Python failed (exit=2): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.update_data --symbols BTCUSDT,ETHUSDT --interval 1d
+2025-12-21 23:11:02 Generating morning report...
+2025-12-21 23:11:02 Command: & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.daily_report morning --preset good_20_100_risk_0_5 --symbols BTCUSDT,ETHUSDT --llm-mode auto
+2025-12-21 23:11:02 Sending morning report to takeshiminaminoshima1@gmail.com...
+2025-12-21 23:11:02 Command: & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.send_daily_report_gmail morning --to takeshiminaminoshima1@gmail.com
+2025-12-21 23:11:02 Exception: Python failed (exit=1): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.send_daily_report_gmail morning --to takeshiminaminoshima1@gmail.com
+2025-12-21 23:11:02 Gmail send failed: Python failed (exit=1): & C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe -m trader.send_daily_report_gmail morning --to takeshiminaminoshima1@gmail.com

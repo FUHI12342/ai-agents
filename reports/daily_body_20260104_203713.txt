@@ -1,0 +1,20 @@
+﻿縲織aily Trader Report縲・(Get-Date)
+
+笆 Status
+- data update: [INFO] Save dir: D:\ai-data\trader\data [OK] ^GSPC -> D:\ai-data\trader\data\Yahoo_GSPC_d.csv rows=4025 [OK] ^N225 -> D:\ai-data\trader\data\Yahoo_N225_d.csv rows=3913 [OK] ^IXIC -> D:\ai-data\trader\data\Yahoo_IXIC_d.csv rows=4025 [OK] USDJPY=X -> D:\ai-data\trader\data\Yahoo_USDJPY_X_d.csv rows=4166 0
+- backtest 0.25: === MULTI ASSET BACKTEST ===   symbol  final_equity  return_pct  max_drawdown_pct  num_trades                        report  BTCUSDT  20675.484983  106.754850        -18.320775          35  daily_BTCUSDT_risk_0_25.json  ETHUSDT  34398.921090  243.989211        -24.462567          36  daily_ETHUSDT_risk_0_25.json    ^GSPC  11475.188460   14.751885         -6.403447          10     daily_GSPC_risk_0_25.json    ^N225  10787.600462    7.876005         -7.859489          15     daily_N225_risk_0_25.json    ^IXIC  11856.867777   18.568678         -8.940871          11     daily_IXIC_risk_0_25.json USDJPY=X  10684.206111    6.842061         -3.363328          10 daily_USDJPY_X_risk_0_25.json 0
+- backtest 0.50: === MULTI ASSET BACKTEST ===   symbol  final_equity  return_pct  max_drawdown_pct  num_trades                       report  BTCUSDT  38847.447425  288.474474        -33.773955          35  daily_BTCUSDT_risk_0_5.json  ETHUSDT  95792.336459  857.923365        -44.447928          36  daily_ETHUSDT_risk_0_5.json    ^GSPC  13061.689358   30.616894        -12.533888          10     daily_GSPC_risk_0_5.json    ^N225  11508.529316   15.085293        -15.280898          15     daily_N225_risk_0_5.json    ^IXIC  13849.779409   38.497794        -17.206496          11     daily_IXIC_risk_0_5.json USDJPY=X  11389.320828   13.893208         -6.644138          10 daily_USDJPY_X_risk_0_5.json 0
+
+笆 Generated Reports (today)
+- daily_USDJPY_X_risk_0_5.json
+- daily_IXIC_risk_0_5.json
+- daily_N225_risk_0_5.json
+- daily_GSPC_risk_0_5.json
+- daily_ETHUSDT_risk_0_5.json
+- daily_BTCUSDT_risk_0_5.json
+- daily_USDJPY_X_risk_0_25.json
+- daily_IXIC_risk_0_25.json
+- daily_N225_risk_0_25.json
+- daily_GSPC_risk_0_25.json
+- daily_ETHUSDT_risk_0_25.json
+- daily_BTCUSDT_risk_0_25.json

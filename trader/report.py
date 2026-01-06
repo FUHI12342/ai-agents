@@ -1,13 +1,54 @@
 import json
+import os
 from pathlib import Path
 from datetime import datetime
-from dotenv import load_dotenv
-from openai import OpenAI
 from .config import LOG_DIR
 
-# .env から OPENAI_API_KEY を読み込む
-load_dotenv()
-client = OpenAI()
+try:
+    import openai
+except ImportError:
+    openai = None
+
+class SimpleOpenAIClient:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = "https://api.openai.com/v1"
+
+    def responses_create(self, model, input_text):
+        url = f"{self.base_url}/responses"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": model,
+            "input": input_text
+        }
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
+        try:
+            with urllib.request.urlopen(req) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                return SimpleResponse(result)
+        except Exception as e:
+            return SimpleResponse({"error": str(e)})
+
+class SimpleResponse:
+    def __init__(self, data):
+        self.data = data
+
+    @property
+    def output_text(self):
+        if 'output' in self.data and self.data['output']:
+            return self.data['output'][0].get('content', [{}])[0].get('text', {}).get('value', '')
+        return ''
+
+def get_client():
+    if openai is None:
+        return None
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        return None
+    return openai.OpenAI(api_key=api_key)
 
 
 def load_today_backtest_log() -> str:
@@ -27,82 +68,133 @@ def load_today_backtest_log() -> str:
     return "\n".join(text_lines) if text_lines else "ログはありますが、中身が空です。"
 
 
-def _extract_text_from_response(resp) -> str:
+
+
+def generate_multi_trading_report(session: str, summary_input: str, llm_mode: str) -> str:
     """
-    OpenAI Responses API のレスポンスからテキストを安全に取り出すヘルパー。
-
-    - resp.output_text があればそれを優先
-    - なければ resp.output[*].content[*].text.value を総なめ
-    - それでも無ければエラーメッセージを返す
+    複数銘柄のまとめレポートを生成
+    llm_mode: "never" (LLMなし), "auto" (APIキーがなければフォールバック), "force" (APIキーが必須)
     """
-    # まずは便利プロパティ output_text を試す
-    if getattr(resp, "output_text", None):
-        return resp.output_text
+    client = get_client()
 
-    parts = []
+    if llm_mode == "never":
+        # LLMなしのテンプレレポート
+        return f"""
+[トレードレポート - LLMなし]
 
-    output = getattr(resp, "output", None)
-    if not output:
-        return "(モデルからのテキスト出力がありませんでした)"
+時間帯: {session}
 
-    for item in output:
-        contents = getattr(item, "content", None)
-        if not contents:
-            continue
+まとめデータ:
+{summary_input}
 
-        for c in contents:
-            # OpenAI Python SDK の text オブジェクトを想定
-            txt = getattr(c, "text", None)
-            if not txt:
-                continue
+Profile: preset=good_20_100_risk_0_5, short_window=20, long_window=100, risk_pct=0.5, fee_rate=0.0005
 
-            # text.value を優先
-            value = getattr(txt, "value", None)
-            if value:
-                parts.append(value)
-            else:
-                # 念のため str() で文字列化
-                parts.append(str(txt))
+Summary Table:
+Symbol | Return | MaxDD | Sharpe | Trades | Final
+-------|--------|-------|--------|--------|------
+(データなし - LLMなしモード)
 
-    return "\n".join(parts) if parts else "(モデルからのテキスト出力がありませんでした)"
+各銘柄の詳細: データなし
 
+不明な項目は「不明」と記載。
+"""
 
-def generate_trading_report(session: str, news_text: str) -> str:
-    """
-    session: 'morning' / 'noon' / 'night' など
-    news_text: その時間帯のニュース要約テキスト（最初は手動でもOK）
-    """
-    log_text = load_today_backtest_log()
+    elif llm_mode == "auto":
+        if client is None:
+            # フォールバック
+            return f"""
+[トレードレポート - LLMなし (APIキーなし)]
 
-    prompt = f"""
+時間帯: {session}
+
+まとめデータ:
+{summary_input}
+
+Profile: preset=good_20_100_risk_0_5, short_window=20, long_window=100, risk_pct=0.5, fee_rate=0.0005
+
+Summary Table:
+Symbol | Return | MaxDD | Sharpe | Trades | Final
+-------|--------|-------|--------|--------|------
+(データなし - APIキーなし)
+
+各銘柄の詳細: データなし
+
+不明な項目は「不明」と記載。
+"""
+        else:
+            # LLMで生成
+            prompt = f"""
 あなたは慎重なトレードアドバイザーです。
-以下は今日のバックテスト結果とニュース概要です。
+以下は複数銘柄のバックテスト結果とニュース概要です。
 
 [時間帯]
 {session}
 
-[バックテストログ]
-{log_text}
-
-[ニュース]
-{news_text}
+[まとめデータ]
+{summary_input}
 
 以下を日本語でまとめてください：
 
-1. 現在の戦略の状態とリスクの簡単な診断
-2. この時間帯に注意すべきポイント（やってはいけない行動を中心に）
-3. 次の時間帯までに確認しておくと良い指標やイベント
+Profile: preset=good_20_100_risk_0_5, short_window=20, long_window=100, risk_pct=0.5, fee_rate=0.0005
 
+Summary Table:
+Symbol | Return | MaxDD | Sharpe | Trades | Final
+-------|--------|-------|--------|--------|------
+(各銘柄の行をここに挿入)
+
+各銘柄の詳細セクション（ニュース3件＋注意点）
+
+不明な項目は「不明」と記載してください。
 箇条書きベースで、読みやすく簡潔にお願いします。
 """
+            try:
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                text = resp.choices[0].message.content
+                return text
+            except Exception as e:
+                return f"レポート生成中にエラーが発生しました: {e}"
 
-    try:
-        resp = client.responses.create(
-            model="gpt-5-mini",
-            input=prompt,
-        )
-        text = _extract_text_from_response(resp)
-        return text
-    except Exception as e:
-        # ここで例外内容も一応返しておくとデバッグしやすい
-        return f"レポート生成中にエラーが発生しました: {e}"
+    elif llm_mode == "force":
+        if client is None:
+            raise RuntimeError("OPENAI_API_KEY is required for llm_mode='force'")
+        else:
+            # LLMで生成
+            prompt = f"""
+あなたは慎重なトレードアドバイザーです。
+以下は複数銘柄のバックテスト結果とニュース概要です。
+
+[時間帯]
+{session}
+
+[まとめデータ]
+{summary_input}
+
+以下を日本語でまとめてください：
+
+Profile: preset=good_20_100_risk_0_5, short_window=20, long_window=100, risk_pct=0.5, fee_rate=0.0005
+
+Summary Table:
+Symbol | Return | MaxDD | Sharpe | Trades | Final
+-------|--------|-------|--------|--------|------
+(各銘柄の行をここに挿入)
+
+各銘柄の詳細セクション（ニュース3件＋注意点）
+
+不明な項目は「不明」と記載してください。
+箇条書きベースで、読みやすく簡潔にお願いします。
+"""
+            try:
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                text = resp.choices[0].message.content
+                return text
+            except Exception as e:
+                return f"レポート生成中にエラーが発生しました: {e}"
+
+    else:
+        raise ValueError(f"Invalid llm_mode: {llm_mode}. Must be 'never', 'auto', or 'force'")

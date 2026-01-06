@@ -1,0 +1,65 @@
+﻿[INFO] Start : 2026/01/05 11:41:41
+[INFO] Script: C:\Users\FHiro\Projects\ai-agents\scripts\daily_run.ps1
+[INFO] Root  : C:\Users\FHiro\Projects\ai-agents
+[INFO] Python: C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ENV ] PSVersion: 5.1.19041.6456
+[ENV ] PSEdition: Desktop
+
+[STEP] python_version
+[EXE ] C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ARGV] --version
+Python 3.10.6
+[RC  ] 0
+
+[STEP] download_market_data
+[EXE ] C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ARGV] -m trader.download_market_data --symbols ^GSPC ^N225 ^IXIC USDJPY=X --start 2010-01-01 --strict
+[INFO] Save dir: D:\ai-data\trader\data
+[OK] ^GSPC -> D:\ai-data\trader\data\Yahoo_GSPC_d.csv rows=4025
+[OK] ^N225 -> D:\ai-data\trader\data\Yahoo_N225_d.csv rows=3914
+[OK] ^IXIC -> D:\ai-data\trader\data\Yahoo_IXIC_d.csv rows=4025
+[OK] USDJPY=X -> D:\ai-data\trader\data\Yahoo_USDJPY_X_d.csv rows=4167
+[RC  ] 0
+
+[STEP] backtest risk=0.25
+[EXE ] C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ARGV] -m trader.run_backtest_multi_assets --risk-pct 0.25 --ma-short 20 --ma-long 100 --report-prefix daily
+=== MULTI ASSET BACKTEST ===
+  symbol  final_equity  return_pct  max_drawdown_pct  num_trades                        report
+ BTCUSDT  20675.484983  106.754850        -18.320775          35  daily_BTCUSDT_risk_0_25.json
+ ETHUSDT  34398.921090  243.989211        -24.462567          36  daily_ETHUSDT_risk_0_25.json
+   ^GSPC  11475.188460   14.751885         -6.403447          10     daily_GSPC_risk_0_25.json
+   ^N225  10861.724628    8.617246         -7.859489          15     daily_N225_risk_0_25.json
+   ^IXIC  11856.867777   18.568678         -8.940871          11     daily_IXIC_risk_0_25.json
+USDJPY=X  10691.841014    6.918410         -3.363328          10 daily_USDJPY_X_risk_0_25.json
+[RC  ] 0
+
+[STEP] backtest risk=0.50
+[EXE ] C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ARGV] -m trader.run_backtest_multi_assets --risk-pct 0.50 --ma-short 20 --ma-long 100 --report-prefix daily
+=== MULTI ASSET BACKTEST ===
+  symbol  final_equity  return_pct  max_drawdown_pct  num_trades                       report
+ BTCUSDT  38847.447425  288.474474        -33.773955          35  daily_BTCUSDT_risk_0_5.json
+ ETHUSDT  95792.336459  857.923365        -44.447928          36  daily_ETHUSDT_risk_0_5.json
+   ^GSPC  13061.689358   30.616894        -12.533888          10     daily_GSPC_risk_0_5.json
+   ^N225  11666.684995   16.666850        -15.280898          15     daily_N225_risk_0_5.json
+   ^IXIC  13849.779409   38.497794        -17.206496          11     daily_IXIC_risk_0_5.json
+USDJPY=X  11405.598378   14.055984         -6.644138          10 daily_USDJPY_X_risk_0_5.json
+[RC  ] 0
+
+[STEP] notify_gmail
+[EXE ] C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe
+[ARGV] -m trader.notify_gmail --to takeshiminaminoshima1@gmail.com --subject Daily Trader Report --body-file C:\Users\FHiro\Projects\ai-agents\reports\daily_body_20260105_114141.txt --body-encoding utf-8
+Traceback (most recent call last):
+  File "C:\Users\FHiro\AppData\Local\Programs\Python\Python310\lib\runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "C:\Users\FHiro\AppData\Local\Programs\Python\Python310\lib\runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "C:\Users\FHiro\Projects\ai-agents\trader\notify_gmail.py", line 54, in <module>
+    raise SystemExit(main())
+  File "C:\Users\FHiro\Projects\ai-agents\trader\notify_gmail.py", line 29, in main
+    with open(args.body_file, "r", encoding=args.body_encoding) as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\FHiro\\Projects\\ai-agents\\reports\\daily_body_20260105_114141.txt'
+[RC  ] 1
+[INFO] RC_SUMMARY: py=0 data=0 bt1=0 bt2=0 mail=1 -> final=1
+[INFO] End   : 2026/01/05 11:41:45

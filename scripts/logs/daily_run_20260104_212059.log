@@ -1,0 +1,23 @@
+﻿[INFO] Start: 2026/01/04 21:20:59
+[INFO] Script: C:\Users\FHiro\Projects\ai-agents\scripts\daily_run.ps1
+[INFO] Project: C:\Users\FHiro\Projects\ai-agents
+
+[STEP] download_market_data
+[CMD ] "C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe" -m trader.download_market_data --symbols ^GSPC ^N225 ^IXIC USDJPY=X --start 2010-01-01 --strict
+
+[RC  ] 
+
+[STEP] backtest risk=0.25
+[CMD ] "C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe" -m trader.run_backtest_multi_assets --risk-pct 0.25 --ma-short 20 --ma-long 100 --report-prefix daily
+
+[RC  ] 
+
+[STEP] backtest risk=0.50
+[CMD ] "C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe" -m trader.run_backtest_multi_assets --risk-pct 0.50 --ma-short 20 --ma-long 100 --report-prefix daily
+
+[RC  ] 
+
+[STEP] notify_gmail
+[CMD ] "C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe" -m trader.notify_gmail --to "takeshiminaminoshima1@gmail.com" --subject "縲仙叙蠑慕ｵ先棡騾夂衍縲船aily Trader Report" --body-file "C:\Users\FHiro\Projects\ai-agents\reports\daily_body_20260104_212059.txt" --body-encoding "utf-8"
+
+[RC  ] 
