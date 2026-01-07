@@ -1,15 +1,13 @@
-.env
-__pycache__/
-*.pyc
-.vscode/
-.idea/# runtime logs
-scripts/logs/
-trader/scripts/logs/
+﻿# runtime logs
+scripts/logs/*
+!scripts/logs/.gitkeep
 
 # generated reports/artifacts
-reports/
-trader/reports/*latest.*
-trader/reports/*.flag
+reports/*
+!reports/.gitkeep
 
-# (必要なら) zipなど成果物
+trader/reports/*
+!trader/reports/.gitkeep
+
+# backups/artifacts
 *.zip
