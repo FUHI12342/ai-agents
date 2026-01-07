@@ -1,0 +1,13 @@
+Paper Execution Summary
+=======================
+
+[BTCUSDT]
+  last_signal: ABOVE
+  next_action: HOLD
+  suggested_order_size: 0.000000
+  current_position: 0.000185
+  target_position: 0.000185
+  equity_jpy: 9977.09
+  return: -0.23%
+  maxDD: -1.99%
+  trades_total: 11

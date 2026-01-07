@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-06 14:12:58",
+  "generated_at": "2026-01-07 16:18:50",
   "symbol": "^N225",
   "ma_short": 20,
   "ma_long": 100,
@@ -7,8 +7,8 @@
   "start": "2017-08-17",
   "end": null,
   "result": {
-    "final_equity": 10897.770781457446,
-    "return_pct": 8.977707814574455,
+    "final_equity": 10874.66040758712,
+    "return_pct": 8.7466040758712,
     "max_drawdown_pct": -7.859489496257161,
     "num_trades": 15
   }

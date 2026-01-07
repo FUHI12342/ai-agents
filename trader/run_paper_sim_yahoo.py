@@ -152,6 +152,13 @@ def main() -> int:
                 f.write(f"ERROR: {e}\n")
                 f.write(f"symbol: {sym}\n")
                 f.write("reason: failed to load data\n")
+                # Add debug info if available
+                if isinstance(e, ValueError) and "Debug info:" in str(e):
+                    debug_part = str(e).split("Debug info: ", 1)[1]
+                    f.write(f"Debug info: {debug_part}\n")
+            # Overwrite trades_latest with empty
+            latest_csv = os.path.join(out_dir, "paper_yahoo_trades_latest.csv")
+            write_csv(latest_csv, [])
             return 1
 
         if not data:
@@ -163,7 +170,25 @@ def main() -> int:
                 f.write("ERROR: candles=0\n")
                 f.write(f"symbol: {sym}\n")
                 f.write("reason: no data loaded\n")
+            # Overwrite trades_latest with empty
+            latest_csv = os.path.join(out_dir, "paper_yahoo_trades_latest.csv")
+            write_csv(latest_csv, [])
             return 1
+
+        # Check for state corruption: if last_ts is in the future relative to data max date
+        max_date_ms = max(ts for ts, _, _, _, _, _ in data) if data else 0
+        if state.last_ts and state.last_ts > max_date_ms:
+            print(f"WARNING: state.last_ts {state.last_ts} > max_date {max_date_ms} for {sym}, resetting state")
+            state = PaperState(
+                cash_quote=float(st["initial_capital_jpy"]) / jpy_per_usdt,
+                pos_base=0.0,
+                last_ts=None,
+                prev_diff=None,
+                peak_equity_quote=None,
+                max_drawdown_pct=0.0,
+                trades_total=state.trades_total,  # keep trades_total cumulative
+            )
+            summary_lines.append(f"WARNING: state reset for {sym} due to future last_ts\n")
 
         before_trades_total = state.trades_total
         state, new_trades, equity_curve = simulate_ma_cross_yahoo(
@@ -186,6 +211,9 @@ def main() -> int:
                 f.write("ERROR: equity_curve missing\n")
                 f.write(f"symbol: {sym}\n")
                 f.write("reason: insufficient data\n")
+            # Overwrite trades_latest with empty
+            latest_csv = os.path.join(out_dir, "paper_yahoo_trades_latest.csv")
+            write_csv(latest_csv, [])
             return 1
 
         # current equity at last close (if exists)

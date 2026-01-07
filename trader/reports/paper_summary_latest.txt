@@ -1,8 +1,8 @@
-PaperTrade Simulation (MA cross) 2026/01/06 14:13:01
+PaperTrade Simulation (MA cross) 2026/01/07 16:18:52
 JPY/USDT assumed: 150.0000
 
-[BTCUSDT] timeframe=1h candles=605 last=2026-01-06 05:00:00 UTC
-- equity_jpy: 10,003.66  return: 0.04%  maxDD: -1.99%
+[BTCUSDT] timeframe=1h candles=605 last=2026-01-07 07:00:00 UTC
+- equity_jpy: 9,977.09  return: -0.23%  maxDD: -1.99%
 - cash_quote: 49.313124  pos_base: 0.000185  new_trades: 0
 
 Files

@@ -11,10 +11,10 @@ from .backtest_service import run_backtest
 
 def normalize_metrics(result):
     return {
-        'return_pct': result.get('pnl', 0) * 100,  # 仮定: pnlは割合
-        'max_drawdown_pct': result.get('max_drawdown', 0) * 100,
-        'sharpe_like': result.get('sharpe', 0),
-        'num_trades_est': result.get('num_trades', 0),
+        'return_pct': result.get('return_pct', 0),
+        'max_drawdown_pct': float(result.get('max_drawdown_pct', result.get('max_drawdown', 0) * 100)),
+        'sharpe_like': result.get('sharpe_like', 0),
+        'num_trades_est': result.get('trades', 0),
         'final_equity': result.get('final_equity', 0)
     }
 
@@ -138,10 +138,10 @@ def main():
             print(f"Error running backtest for {symbol}: {e}", file=sys.stderr)
             # エラーの場合、ダミーメトリクス
             metrics = normalize_metrics({
-                'pnl': 0.0,
-                'max_drawdown': 0.0,
-                'sharpe': 0.0,
-                'num_trades': 0,
+                'return_pct': 0.0,
+                'max_drawdown_pct': 0.0,
+                'sharpe_like': 0.0,
+                'trades': 0,
                 'final_equity': 0.0
             })
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-06 14:12:59",
+  "generated_at": "2026-01-07 16:18:51",
   "symbol": "USDJPY=X",
   "ma_short": 20,
   "ma_long": 100,
@@ -7,8 +7,8 @@
   "start": "2017-08-17",
   "end": null,
   "result": {
-    "final_equity": 11375.496780416086,
-    "return_pct": 13.754967804160856,
+    "final_equity": 11376.466254753781,
+    "return_pct": 13.76466254753781,
     "max_drawdown_pct": -6.644138226808491,
     "num_trades": 10
   }

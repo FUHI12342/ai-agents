@@ -153,6 +153,16 @@ try {
       "--state-file","D:\ai-data\paper_state.json",
       "--out-dir","trader\reports"
     )
+    # Generate paper execution summary
+    $rc_paper_exec = Invoke-Exe "paper_execution_report" $python @(
+      "-m","trader.paper_execution_report",
+      "--state-file","D:\ai-data\paper_state.json",
+      "--symbols","BTCUSDT",
+      "--ma-short","20","--ma-long","100",
+      "--risk-pct","0.25",
+      "--jpy-per-usdt","150",
+      "--out-dir","trader\reports"
+    )
   } else {
     Write-Log "[STEP] paper_trade_sim (SKIP: KILL_SWITCH)"
     $rc_paper = 0
@@ -184,6 +194,9 @@ try {
   # Check API configured
   $isApiConfigured = & $python -c "from trader.config import load_config; print(load_config().is_api_configured())" 2>$null
   if ($isApiConfigured -ne "True") { $isApiConfigured = $false } else { $isApiConfigured = $true }
+
+  # Auth smoke test
+  $rc_auth_smoke = Invoke-Exe "auth_smoke" $python @("-m","trader.exchange_auth_smoke")
 
   # Live trade run
   if ($traderMode -eq "paper") {
@@ -299,6 +312,18 @@ timestamp=$timestamp
 
     # --- compose mail body & write file (no BOM) ---
   $body = @()
+  # Self-diagnosis for Windows Task
+  $taskInfo = Get-ScheduledTaskInfo -TaskName "ai-agents_daily_run_2300" -ErrorAction SilentlyContinue
+  if ($taskInfo) {
+    $lastRun = $taskInfo.LastRunTime
+    $missed = $taskInfo.NumberOfMissedRuns
+    $now = Get-Date
+    $hoursSinceLastRun = if ($lastRun) { ($now - $lastRun).TotalHours } else { 999 }
+    if ($hoursSinceLastRun -gt 36 -or $missed -gt 0) {
+      $body += "WARNING: Task Issues - LastRun: $lastRun, MissedRuns: $missed"
+      $body += ""
+    }
+  }
   # Add WARNING if API not configured
   if (-not $isApiConfigured) {
     $body += "WARNING: API_NOT_CONFIGURED"
@@ -352,6 +377,19 @@ timestamp=$timestamp
     $body += "- (paper_yahoo_summary_latest.txt not generated)"
   }
 
+  # --- Auth Smoke Summary (optional) ---
+  $authSmokeSummary = Join-Path $projectRoot "trader\reports\auth_smoke_latest.txt"
+  if (Test-Path -LiteralPath $authSmokeSummary) {
+    $body += ""
+    $body += "Auth Smoke Summary"
+    $body += "----------------------------------------"
+    $body += (Get-Content -LiteralPath $authSmokeSummary -ErrorAction SilentlyContinue)
+  } else {
+    $body += ""
+    $body += "Auth Smoke Summary"
+    $body += "- (auth_smoke_latest.txt not generated)"
+  }
+
   # --- Live Summary (optional) ---
   $liveSummary = Join-Path $projectRoot "trader\reports\live_summary_latest.txt"
   if (Test-Path -LiteralPath $liveSummary) {
@@ -389,6 +427,19 @@ timestamp=$timestamp
     $body += ""
     $body += "Go/No-Go Summary"
     $body += "- (go_nogo_latest.txt not generated)"
+  }
+
+  # --- Paper Execution Summary (optional) ---
+  $paperExecSummary = Join-Path $projectRoot "trader\reports\paper_exec_summary_latest.txt"
+  if (Test-Path -LiteralPath $paperExecSummary) {
+    $body += ""
+    $body += "Paper Execution Summary"
+    $body += "----------------------------------------"
+    $body += (Get-Content -LiteralPath $paperExecSummary -ErrorAction SilentlyContinue)
+  } else {
+    $body += ""
+    $body += "Paper Execution Summary"
+    $body += "- (paper_exec_summary_latest.txt not generated)"
   }
 
   # --- Min Lot Live Go/No-Go Block ---

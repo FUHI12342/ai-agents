@@ -115,6 +115,24 @@ Invoke-Python -PyArgs @(
     "--llm-mode",$LlmMode
 )
 
+if ($Session -eq "noon") {
+  Write-Log "Generating paper execution summary for noon..."
+  Invoke-Python -PyArgs @(
+    "-m","trader.paper_execution_report",
+    "--state-file","D:\ai-data\paper_state.json",
+    "--symbols","BTCUSDT",
+    "--ma-short","20","--ma-long","100",
+    "--risk-pct","0.25",
+    "--jpy-per-usdt","150",
+    "--out-dir","trader/reports"
+  )
+
+  Write-Log "Running auth smoke test for noon..."
+  Invoke-Python -PyArgs @(
+    "-m","trader.exchange_auth_smoke"
+  )
+}
+
 # DryRun は「送信だけスキップ」にする（生成は確認したいはず）
 if ($DryRun) {
     Write-Log "[SKIP] Gmail send because -DryRun"

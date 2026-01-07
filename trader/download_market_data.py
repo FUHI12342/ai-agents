@@ -18,10 +18,7 @@ import pandas as pd
 import yfinance as yf
 
 from .config import DATA_DIR
-
-
-def _safe_filename(symbol: str) -> str:
-    return symbol.replace("^", "").replace("/", "_").replace("=", "_")
+from .yahoo_symbols import symbol_to_yahoo_file_stem
 
 
 def _normalize_symbol(raw: str) -> str:
@@ -60,7 +57,7 @@ def download_daily_ohlcv(symbol: str, start: str | None = None, end: str | None 
 
 def save_csv(symbol: str, df: pd.DataFrame, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    fname = f"Yahoo_{_safe_filename(symbol)}_d.csv"
+    fname = f"Yahoo_{symbol_to_yahoo_file_stem(symbol)}_d.csv"
     path = out_dir / fname
     df.to_csv(path, index=False, encoding="utf-8")
     return path
