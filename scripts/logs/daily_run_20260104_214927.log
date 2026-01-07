@@ -1,6 +1,0 @@
-﻿[INFO] Start : 2026/01/04 21:49:27
-[INFO] Script: C:\Users\FHiro\Projects\ai-agents\scripts\daily_run.ps1
-[INFO] Root  : C:\Users\FHiro\Projects\ai-agents
-
-[STEP] download_market_data
-[CMD ] C:\Users\FHiro\Projects\ai-agents\.venv\Scripts\python.exe 

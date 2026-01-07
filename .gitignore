@@ -2,4 +2,14 @@
 __pycache__/
 *.pyc
 .vscode/
-.idea/
+.idea/# runtime logs
+scripts/logs/
+trader/scripts/logs/
+
+# generated reports/artifacts
+reports/
+trader/reports/*latest.*
+trader/reports/*.flag
+
+# (必要なら) zipなど成果物
+*.zip

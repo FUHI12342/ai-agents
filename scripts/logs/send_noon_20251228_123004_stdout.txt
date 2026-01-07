@@ -1,1 +1,0 @@
-GMAIL_SEND_SUCCESS: Report sent successfully to takeshiminaminoshima1@gmail.com, MessageId: <8c7ce2d1-9988-437a-804e-caac1240e514@gmail.com>

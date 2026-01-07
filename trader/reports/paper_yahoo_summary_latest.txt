@@ -1,3 +1,0 @@
-﻿PaperYahoo Summary
-ERROR: rc=1
-
