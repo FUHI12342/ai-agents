@@ -11,3 +11,6 @@ trader/reports/*
 
 # backups/artifacts
 *.zip
+.venv/
+__pycache__/
+*.pyc
