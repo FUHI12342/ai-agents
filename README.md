@@ -1,5 +1,13 @@
 # ai-agents
 
+## Compack (voice/text agent)
+
+- Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) / [docs/DATA_FLOW.md](docs/DATA_FLOW.md) / [docs/ROADMAP.md](docs/ROADMAP.md)
+- Quick start (text mode, new session): `python -m apps.compack.main --mode text --resume new`
+- Diagnostics (includes GPU estimate via ollama ps / nvidia-smi): `python -m apps.compack.main --diagnose --mode text`
+- Desktop shortcuts (Windows): `powershell -ExecutionPolicy Bypass -File scripts/create_shortcuts.ps1`
+- Verify git/worktree state: `powershell -ExecutionPolicy Bypass -File scripts/git_verify.ps1`
+
 ## Trader Module
 
 ### 単体運用例

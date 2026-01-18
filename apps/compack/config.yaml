@@ -1,0 +1,54 @@
+data:
+  dir:  # Optional override; defaults to %LOCALAPPDATA%\Compack (Windows) or ~/.compack (macOS/Linux)
+
+privacy:
+  mode: normal  # strict | normal | off
+  external: ask  # deny | allow | ask
+  allow_external_categories: []  # example: ["weather"]
+  allow_paths: []  # allow-listed local paths for future tools
+  system_prompt:
+  profile_name: default
+
+stt:
+  provider: local_whisper  # openai_whisper | local_whisper
+  openai:
+    model: whisper-1
+  local:
+    model: base  # tiny | base | small | medium | large
+
+llm:
+  provider: ollama  # openai_gpt4 | ollama
+  openai:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 1000
+  ollama:
+    base_url: http://localhost:11434
+    model:  # leave empty to auto-pick from installed tags
+    temperature: 0.7
+
+tts:
+  provider: pyttsx3  # openai_tts | pyttsx3
+  openai:
+    voice: alloy  # alloy | echo | fable | onyx | nova | shimmer
+    speed: 1.0
+  pyttsx3:
+    rate: 150
+    volume: 1.0
+
+session:
+  log_dir: logs/sessions
+  max_context_messages: 10
+
+audio:
+  sample_rate: 16000
+  channels: 1
+  record_duration: 5.0
+
+logging:
+  file: logs/compack.log
+  level: INFO  # DEBUG | INFO | WARNING | ERROR
+
+retry:
+  max_attempts: 3
+  base_delay: 1.0
