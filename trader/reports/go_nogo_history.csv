@@ -1,0 +1,44 @@
+timestamp,summary,order_management,reconcile,risk_guard,operations
+1767619785673,READY_PAPER: False,False,False,False,True
+1767621002953,READY_PAPER: True,True,True,True,True
+1767621015898,READY_PAPER: False,True,True,True,False
+1767621960256,READY_PAPER: False,True,True,True,False
+1767621962737,READY_PAPER: False,True,True,True,False
+1767656463396,READY_PAPER: False (consecutive_pass=0/3),True,True,True,False
+1767656478290,READY_PAPER: False (consecutive_pass=0/3),True,True,True,False
+1767657648309,READY_PAPER: True (consecutive_pass=0/3),True,True,True,True
+1767657651903,READY_PAPER: True (consecutive_pass=1/3),True,True,True,True
+1767659137950,READY_PAPER: True (consecutive_pass=2/3),True,True,True,True
+1767661327599,READY_PAPER: True (consecutive_pass=3/3),True,True,True,True,False
+1767661380683,READY_PAPER: True (consecutive_pass=3/3),True,True,True,True,False
+1767661427470,READY_PAPER: True (consecutive_pass=3/3),True,True,True,True,False
+1767661449706,READY_PAPER: True (consecutive_pass=3/3),True,True,True,True,True
+1767661466512,READY_PAPER: True (consecutive_pass=3/3),True,True,True,True,True
+1767661934690,READY_PAPER: True (consecutive_pass=3/3),True,True,True,True,True
+1767665641340,"READY_PAPER: True (consecutive_pass=3/3, remaining=0)",True,True,True,True,True
+1767665772160,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,True,True,True,True
+1767668066497,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767668104355,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767668126447,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767668155712,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767668430356,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767668438887,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767668903424,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767670872489,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767671452651,"READY_TESTNET: False (consecutive_pass=0/3, remaining=3)",True,False,True,True,True
+1767672001750,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767674520640,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767676383661,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767683612955,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767683677673,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767683685687,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767683716598,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767683725059,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767683756338,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767683764292,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767708013341,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767760031594,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,True,False
+1767762890870,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767762904827,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767768743595,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False
+1767770337109,"READY_TESTNET: False (api_not_configured, remaining=3)",True,True,False,True,False,False

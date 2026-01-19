@@ -19,8 +19,19 @@ def simple_backtest(df: pd.DataFrame) -> dict:
     # おおざっぱなトレード回数推定（signalが変わった回数/2）
     num_trades = int(df["position"].diff().abs().sum() / 2)
 
+    # Max drawdown calculation
+    peak = df["equity"].cummax()
+    drawdown = (df["equity"] - peak) / peak
+    max_drawdown = drawdown.min()
+
+    # Sharpe ratio (assuming daily returns, risk-free rate = 0)
+    daily_returns = df["strategy_ret"].fillna(0)
+    sharpe = daily_returns.mean() / daily_returns.std() if daily_returns.std() > 0 else 0
+
     return {
         "final_equity": float(final_equity),
         "pnl": float(pnl),
         "num_trades_est": num_trades,
+        "max_drawdown": float(max_drawdown),
+        "sharpe": float(sharpe),
     }

@@ -1,0 +1,46 @@
+--- a/scripts/run_all_tests.ps1
++++ b/scripts/run_all_tests.ps1
+@@ -1,18 +1,18 @@
+ # Run all tests in the ai-agents repository
+ # This script activates the virtual environment and runs pytest on all test directories
+ 
+ param(
+     [string]$TestPath = ".",
+-    [string]$ReportFile = "reports\nightly\test_report_latest.md"
++    [string]$ReportFile = "reports\nightly\test_report_latest.md",
++    [switch]$NoVenv
+ )
+ 
+ # Set the repository root
+-$RepoRoot = Split-Path -Parent $PSScriptRoot
++$RepoRoot = Split-Path -Parent $PSScriptRoot
+ 
+-# Activate virtual environment if it exists
+-$venvPath = Join-Path $RepoRoot ".venv\Scripts\Activate.ps1"
+-if (Test-Path $venvPath) {
+-    & $venvPath
+-} else {
+-    Write-Host "Virtual environment not found at $venvPath, running without activation"
+-}
++# Activate virtual environment if it exists and not disabled
++$venvPath = Join-Path $RepoRoot ".venv\Scripts\Activate.ps1"
++if ((Test-Path $venvPath) -and -not $NoVenv) {
++    & $venvPath
++} else {
++    Write-Host "Virtual environment not activated (not found or disabled)"
++}
+ 
+ # Run tests
+ Write-Host "Running all tests..."
+-pytest $TestPath --tb=short | Out-File -FilePath (Join-Path $RepoRoot $ReportFile) -Encoding UTF8
++pytest $TestPath --tb=short | Out-File -FilePath (Join-Path $RepoRoot $ReportFile) -Encoding UTF8
+ 
+-# Deactivate virtual environment if it was activated
+-if (Test-Path $venvPath) {
+-    deactivate
+-}
++# Deactivate virtual environment if it was activated
++if ((Test-Path $venvPath) -and -not $NoVenv) {
++    deactivate
++}
+ 

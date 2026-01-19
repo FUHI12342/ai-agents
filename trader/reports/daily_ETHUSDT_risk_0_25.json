@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-01-07 16:18:50",
+  "symbol": "ETHUSDT",
+  "ma_short": 20,
+  "ma_long": 100,
+  "risk_pct": 0.25,
+  "start": "2017-08-17",
+  "end": null,
+  "result": {
+    "final_equity": 34398.92108994772,
+    "return_pct": 243.98921089947717,
+    "max_drawdown_pct": -24.46256662643391,
+    "num_trades": 36
+  }
+}

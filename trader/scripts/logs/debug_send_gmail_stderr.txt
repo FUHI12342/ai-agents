@@ -1,0 +1,1 @@
+C:\Users\FHiro\AppData\Local\Programs\Python\Python310\python.exe: Error while finding module specification for 'trader.send_daily_report_gmail' (ModuleNotFoundError: No module named 'trader')

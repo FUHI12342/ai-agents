@@ -1,0 +1,116 @@
+--- /dev/null
++++ b/scripts/backup_run_all.ps1
+@@ -0,0 +1,100 @@
++# Run all backups in the ai-agents repository
++# This script runs release_backup.ps1 for each app and generates a report
++
++# Set the repository root
++$RepoRoot = Split-Path -Parent $PSScriptRoot
++
++# Create reports directory if it doesn't exist
++$ReportsDir = Join-Path $RepoRoot "reports\nightly"
++if (-not (Test-Path $ReportsDir)) {
++    New-Item -ItemType Directory -Path $ReportsDir -Force | Out-Null
++}
++
++# Create archive directory
++$ArchiveDir = Join-Path $ReportsDir "archive"
++if (-not (Test-Path $ArchiveDir)) {
++    New-Item -ItemType Directory -Path $ArchiveDir -Force | Out-Null
++}
++
++# Initialize report
++$Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
++$Report = @"
++# Backup Run Report - $Timestamp
++Repository: $RepoRoot
++
++## Backup Results
++"@
++$TotalApps = 0
++$PassedApps = 0
++$FailedApps = 0
++$SkippedApps = 0
++
++# Find and run backup scripts for each app
++$AppsDir = Join-Path $RepoRoot "apps"
++if (Test-Path $AppsDir) {
++    $AppDirs = Get-ChildItem $AppsDir -Directory
++    foreach ($AppDir in $AppDirs) {
++        $BackupScript = Join-Path $AppDir.FullName "scripts\release_backup.ps1"
++        if (Test-Path $BackupScript) {
++            $TotalApps++
++            $AppName = $AppDir.Name
++            Write-Host "Running backup for $AppName..."
++            $StartTime = Get-Date
++            try {
++                $Process = Start-Process -FilePath "powershell" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$BackupScript`"" -Wait -PassThru -NoNewWindow -WorkingDirectory $AppDir.FullName
++                $ExitCode = $Process.ExitCode
++                $EndTime = Get-Date
++                $Elapsed = $EndTime - $StartTime
++                if ($ExitCode -eq 0) {
++                    $Status = "PASS"
++                    $PassedApps++
++                } elseif ($ExitCode -eq 2) {
++                    $Status = "SKIP"
++                    $SkippedApps++
++                } else {
++                    $Status = "FAIL"
++                    $FailedApps++
++                }
++                $Report += @"
++
++### $AppName - Status: $Status - Exit Code: $ExitCode - Start Time: $StartTime - End Time: $EndTime - Elapsed: $($Elapsed.TotalSeconds) seconds
++
++"@
++            } catch {
++                $EndTime = Get-Date
++                $Elapsed = $EndTime - $StartTime
++                $Report += @"
++
++### $AppName - Status: ERROR - Error: $($_.Exception.Message) - Start Time: $StartTime - End Time: $EndTime - Elapsed: $($Elapsed.TotalSeconds) seconds
++
++"@
++                $FailedApps++
++            }
++        } else {
++            $SkippedApps++
++            $AppName = $AppDir.Name
++            $Report += @"
++
++### $AppName - Status: SKIP - No release_backup.ps1 found
++
++"@
++        }
++    }
++}
++
++# Add summary
++$Report += @"
++
++## Summary
++- Total apps with backup scripts: $TotalApps
++- Passed: $PassedApps
++- Failed: $FailedApps
++- Skipped: $SkippedApps
++
++Report generated at $Timestamp
++"@
++
++# Write to latest
++$LatestPath = Join-Path $ReportsDir "backup_run_latest.md"
++$Report | Out-File -FilePath $LatestPath -Encoding UTF8
++
++# Write to archive
++$ArchiveTimestamp = Get-Date -Format "yyyyMMdd_HHmmss"
++$ArchivePath = Join-Path $ArchiveDir "backup_run_$ArchiveTimestamp.md"
++$Report | Out-File -FilePath $ArchivePath -Encoding UTF8
++
++Write-Host "Backup run completed. Report saved to $LatestPath and $ArchivePath"
++
++# Set exit code
++if ($FailedApps -gt 0) {
++    exit 1
++} else {
++    exit 0
++}

@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-01-07 16:18:50",
+  "symbol": "^IXIC",
+  "ma_short": 20,
+  "ma_long": 100,
+  "risk_pct": 0.25,
+  "start": "2017-08-17",
+  "end": null,
+  "result": {
+    "final_equity": 11896.512302293238,
+    "return_pct": 18.965123022932385,
+    "max_drawdown_pct": -8.94087117003103,
+    "num_trades": 11
+  }
+}

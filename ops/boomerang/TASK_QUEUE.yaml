@@ -1,0 +1,22 @@
+# Task queue for Boomerang operations
+# This file defines the queue of tasks to be processed by the Boomerang system
+
+version: "1.0"
+tasks:
+  - id: "test_run"
+    name: "Run all tests"
+    command: "powershell -ExecutionPolicy Bypass -File scripts/run_all_tests.ps1"
+    priority: "high"
+    status: "pending"
+
+  - id: "backup_audit"
+    name: "Perform backup audit"
+    command: "powershell -ExecutionPolicy Bypass -File scripts/backup_audit.ps1"
+    priority: "medium"
+    status: "pending"
+
+  - id: "data_update"
+    name: "Update trader data"
+    command: "python trader/run_update_data.py"
+    priority: "low"
+    status: "pending"

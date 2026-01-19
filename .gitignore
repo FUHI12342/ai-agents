@@ -1,5 +1,17 @@
-.env
+﻿# runtime logs
+scripts/logs/*
+!scripts/logs/.gitkeep
+
+# generated reports/artifacts
+reports/*
+!reports/.gitkeep
+
+trader/reports/*
+!trader/reports/.gitkeep
+
+# backups/artifacts
+*.zip
+.venv/
 __pycache__/
 *.pyc
-.vscode/
-.idea/
+.hypothesis/

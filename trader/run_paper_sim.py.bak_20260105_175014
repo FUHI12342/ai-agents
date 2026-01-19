@@ -1,0 +1,245 @@
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import os
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
+
+from trader.paper_engine import PaperState, simulate_ma_cross
+
+try:
+    import ccxt  # type: ignore
+except Exception as e:
+    ccxt = None
+
+
+def _iso(ts_ms: int) -> str:
+    return datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+
+def _ccxt_symbol(sym: str) -> str:
+    s = sym.strip()
+    if "/" in s:
+        return s
+    # BTCUSDT -> BTC/USDT (Binance common)
+    if s.endswith("USDT") and len(s) > 4:
+        return s[:-4] + "/USDT"
+    return s
+
+
+def load_state(path: str, default_capital_jpy: float, jpy_per_usdt: float, symbols: List[str]) -> Dict[str, Any]:
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    return {
+        "version": 1,
+        "created_at": datetime.now().isoformat(),
+        "initial_capital_jpy": float(default_capital_jpy),
+        "jpy_per_usdt": float(jpy_per_usdt),
+        "symbols": {s: {
+            "cash_quote": float(default_capital_jpy) / float(jpy_per_usdt),
+            "pos_base": 0.0,
+            "last_ts": None,
+            "prev_diff": None,
+            "peak_equity_quote": None,
+            "max_drawdown_pct": 0.0,
+            "trades_total": 0
+        } for s in symbols}
+    }
+
+
+def save_state(path: str, st: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(st, f, ensure_ascii=False, indent=2)
+
+
+def write_csv(path: str, rows: List[Dict[str, Any]]) -> None:
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    if not rows:
+        # still write header for convenience
+        header = ["time_iso","time_ms","symbol","side","price","qty","notional_quote","fee_quote","cash_quote_after","pos_base_after","equity_quote_after","equity_jpy_after","reason"]
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(header)
+        return
+
+    header = list(rows[0].keys())
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+
+
+def append_history(path: str, rows: List[Dict[str, Any]]) -> None:
+    if not rows:
+        return
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    exists = os.path.exists(path)
+    header = list(rows[0].keys())
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=header)
+        if not exists:
+            w.writeheader()
+        for r in rows:
+            w.writerow(r)
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="True paper trading simulation (MA cross) with trade logs + equity updates")
+    p.add_argument("--capital", type=float, default=10000.0, help="Initial virtual capital in JPY (used when no state exists)")
+    p.add_argument("--symbols", default="BTCUSDT", help="Comma-separated, e.g. BTCUSDT,ETHUSDT")
+    p.add_argument("--ma-short", type=int, default=20)
+    p.add_argument("--ma-long", type=int, default=100)
+    p.add_argument("--risk-pct", type=float, default=0.25)
+    p.add_argument("--fee-rate", type=float, default=0.0005)
+    p.add_argument("--slippage-bps", type=float, default=5.0)
+    p.add_argument("--timeframe", default="1h")
+    p.add_argument("--steps", type=int, default=500, help="How many candles to fetch (plus lookback)")
+    p.add_argument("--jpy-per-usdt", type=float, default=150.0)
+    p.add_argument("--state-file", default=r"D:\ai-data\paper_state.json")
+    p.add_argument("--out-dir", default=os.path.join("trader", "reports"))
+    args = p.parse_args()
+
+    if ccxt is None:
+        print("ERROR: ccxt is not installed. Install with: python -m pip install ccxt")
+        return 2
+
+    symbols = [s.strip() for s in args.symbols.split(",") if s.strip()]
+    out_dir = os.path.abspath(args.out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+
+    st = load_state(args.state_file, args.capital, args.jpy_per_usdt, symbols)
+    jpy_per_usdt = float(st.get("jpy_per_usdt", args.jpy_per_usdt))
+
+    ex = ccxt.binance({"enableRateLimit": True})
+
+    latest_rows: List[Dict[str, Any]] = []
+    summary_lines: List[str] = []
+    now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    summary_lines.append(f"PaperTrade Simulation (MA cross) {now}")
+    summary_lines.append(f"JPY/USDT assumed: {jpy_per_usdt:.4f}")
+    summary_lines.append("")
+
+    for sym in symbols:
+        sym_ccxt = _ccxt_symbol(sym)
+
+        sym_state_raw = st["symbols"].get(sym)
+        if not sym_state_raw:
+            st["symbols"][sym] = {
+                "cash_quote": float(st["initial_capital_jpy"]) / jpy_per_usdt,
+                "pos_base": 0.0,
+                "last_ts": None,
+                "prev_diff": None,
+                "peak_equity_quote": None,
+                "max_drawdown_pct": 0.0,
+                "trades_total": 0
+            }
+            sym_state_raw = st["symbols"][sym]
+
+        state = PaperState(
+            cash_quote=float(sym_state_raw["cash_quote"]),
+            pos_base=float(sym_state_raw["pos_base"]),
+            last_ts=sym_state_raw.get("last_ts", None),
+            prev_diff=sym_state_raw.get("prev_diff", None),
+            peak_equity_quote=sym_state_raw.get("peak_equity_quote", None),
+            max_drawdown_pct=float(sym_state_raw.get("max_drawdown_pct", 0.0)),
+            trades_total=int(sym_state_raw.get("trades_total", 0)),
+        )
+
+        limit = int(args.steps) + int(args.ma_long) + 5
+        ohlcv = ex.fetch_ohlcv(sym_ccxt, timeframe=args.timeframe, limit=limit)
+        # normalize to tuples
+        data: List[Tuple[int, float, float, float, float, float]] = []
+        for row in ohlcv:
+            if not row or len(row) < 6:
+                continue
+            data.append((int(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5])))
+
+        before_trades_total = state.trades_total
+        state, new_trades, equity_curve = simulate_ma_cross(
+            data,
+            state,
+            ma_short=args.ma_short,
+            ma_long=args.ma_long,
+            risk_pct=args.risk_pct,
+            fee_rate=args.fee_rate,
+            slippage_bps=args.slippage_bps,
+            symbol=sym,
+        )
+
+        # current equity at last close (if exists)
+        last_close = data[-1][4] if data else 0.0
+        equity_quote = state.cash_quote + state.pos_base * float(last_close)
+        equity_jpy = equity_quote * jpy_per_usdt
+
+        # build csv rows for this run
+        for t in new_trades:
+            ts_ms = int(t["time_ms"])
+            row = {
+                "time_iso": _iso(ts_ms),
+                "time_ms": ts_ms,
+                "symbol": t["symbol"],
+                "side": t["side"],
+                "price": float(t["price"]),
+                "qty": float(t["qty"]),
+                "notional_quote": float(t["notional_quote"]),
+                "fee_quote": float(t["fee_quote"]),
+                "cash_quote_after": float(t["cash_quote_after"]),
+                "pos_base_after": float(t["pos_base_after"]),
+                "equity_quote_after": (float(t["cash_quote_after"]) + float(t["pos_base_after"]) * float(last_close)),
+                "equity_jpy_after": (float(t["cash_quote_after"]) + float(t["pos_base_after"]) * float(last_close)) * jpy_per_usdt,
+                "reason": t.get("reason", ""),
+            }
+            latest_rows.append(row)
+
+        # persist state
+        st["symbols"][sym] = {
+            "cash_quote": state.cash_quote,
+            "pos_base": state.pos_base,
+            "last_ts": state.last_ts,
+            "prev_diff": state.prev_diff,
+            "peak_equity_quote": state.peak_equity_quote,
+            "max_drawdown_pct": state.max_drawdown_pct,
+            "trades_total": state.trades_total,
+        }
+
+        # summary per symbol
+        init_jpy = float(st["initial_capital_jpy"])
+        ret_pct = (equity_jpy / init_jpy - 1.0) * 100.0 if init_jpy > 0 else 0.0
+        summary_lines.append(f"[{sym}] timeframe={args.timeframe} candles={len(data)} last={_iso(data[-1][0]) if data else '(none)'}")
+        summary_lines.append(f"- equity_jpy: {equity_jpy:,.2f}  return: {ret_pct:,.2f}%  maxDD: {state.max_drawdown_pct:,.2f}%")
+        summary_lines.append(f"- cash_quote: {state.cash_quote:,.6f}  pos_base: {state.pos_base:,.6f}  new_trades: {state.trades_total - before_trades_total}")
+        summary_lines.append("")
+
+    # write outputs
+    latest_csv = os.path.join(out_dir, "paper_trades_latest.csv")
+    hist_csv   = os.path.join(out_dir, "paper_trades_history.csv")
+    summary_txt = os.path.join(out_dir, "paper_summary_latest.txt")
+
+    write_csv(latest_csv, latest_rows)
+    append_history(hist_csv, latest_rows)
+
+    with open(summary_txt, "w", encoding="utf-8") as f:
+        f.write("\n".join(summary_lines).rstrip() + "\n")
+        f.write("\nFiles\n")
+        f.write(f"- latest trades : {latest_csv}\n")
+        f.write(f"- history trades: {hist_csv}\n")
+        f.write(f"- state         : {os.path.abspath(args.state_file)}\n")
+
+    save_state(args.state_file, st)
+
+    print("\n".join(summary_lines))
+    print("OK:")
+    print(f"- wrote {summary_txt}")
+    print(f"- wrote {latest_csv}")
+    print(f"- appended {hist_csv}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
