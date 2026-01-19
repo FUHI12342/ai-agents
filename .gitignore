@@ -14,3 +14,4 @@ trader/reports/*
 .venv/
 __pycache__/
 *.pyc
+.hypothesis/
