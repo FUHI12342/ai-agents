@@ -7,11 +7,13 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from apps.compack.agents import DEFAULT_BASE_POLICY, PersonaRegistry, PersonaRouter, assemble_prompt
 from apps.compack.cli.interface import CLIInterface
 from apps.compack.core import ConfigManager, ConversationOrchestrator, KBManager, SessionManager, StructuredLogger
 from apps.compack.core.privacy_guard import PrivacyGuard
 from apps.compack.models import Config
 from apps.compack.modules import LLMModule, STTModule, TTSModule, ToolManager
+from apps.compack.profile import ProfileManager
 from apps.compack.providers.llm import OllamaLLM, OpenAIGPT4LLM
 from apps.compack.providers.stt import LocalWhisperSTT, OpenAIWhisperSTT
 from apps.compack.providers.tts import OpenAITTSTTS, Pyttsx3TTS
@@ -97,6 +99,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--open-browser", action="store_true", help="Web UI起動時にブラウザを開く")
     parser.add_argument("--resume", type=str, help="セッション再開モード new/latest/<id>")
     parser.add_argument("--profile", type=str, help="プロファイル名を上書き")
+    parser.add_argument("--persona", type=str, default="default", help="起動時のpersona (default/dev/ops/...)")
 
     sub = parser.add_subparsers(dest="subcommand")
     kb = sub.add_parser("kb", help="ローカルKB操作")
@@ -111,6 +114,10 @@ async def main() -> None:
     config = config_manager.load()
     if args.profile:
         config.profile_name = args.profile
+
+    persona_registry = PersonaRegistry()
+    persona_router = PersonaRouter(persona_registry, persona_name=args.persona or "default")
+    profile_manager = ProfileManager()
 
     if args.subcommand == "kb":
         logger = StructuredLogger(log_file=None, level="INFO")
@@ -148,6 +155,7 @@ async def main() -> None:
         privacy_mode=config.privacy_mode,
         external_network=config.external_network,
         profile=config.profile_name,
+        persona=persona_router.current_persona.name,
     )
 
     session = SessionManager(log_dir=config.session_log_dir, logger=logger, max_context_messages=config.session_max_context_messages)
@@ -162,6 +170,12 @@ async def main() -> None:
     tools.register(SetTimerTool())
     tools.register(SearchFilesTool())
     tools.register(WeatherTool())
+
+    assembled_prompt = assemble_prompt(
+        base_policy=DEFAULT_BASE_POLICY,
+        user_profile=profile_manager.format_for_prompt(),
+        persona_block=persona_router.current_persona.prompt_block(),
+    )
 
     orchestrator = ConversationOrchestrator(
         stt=stt,
@@ -178,13 +192,20 @@ async def main() -> None:
         external_mode=config.external_network,
         privacy_guard=privacy_guard,
         allow_external_categories=config.allow_external_categories,
-        system_prompt=config.system_prompt,
+        system_prompt=assembled_prompt,
         profile_name=config.profile_name,
+        persona_name=persona_router.current_persona.name,
     )
     if args.ui == "web":
         start_web_ui(orchestrator, host="127.0.0.1", port=8765, open_browser=args.open_browser)
     else:
-        cli = CLIInterface(orchestrator, config_manager)
+        cli = CLIInterface(
+            orchestrator,
+            config_manager,
+            persona_router=persona_router,
+            profile_manager=profile_manager,
+            base_policy=DEFAULT_BASE_POLICY,
+        )
         await cli.start(mode=args.mode, resume=args.resume)
 
 

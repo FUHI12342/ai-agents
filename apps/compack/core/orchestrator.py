@@ -62,6 +62,7 @@ class ConversationOrchestrator:
         allow_external_categories: Optional[list] = None,
         system_prompt: str = "",
         profile_name: str = "default",
+        persona_name: str = "default",
     ):
         self.stt = stt
         self.llm = llm
@@ -79,6 +80,7 @@ class ConversationOrchestrator:
         self.allowed_categories = set(allow_external_categories or [])
         self.system_prompt = system_prompt
         self.profile_name = profile_name
+        self.persona_name = persona_name
 
         self._external_allowed = external_mode == "allow"
         self._pending_external_confirm = False
@@ -86,10 +88,15 @@ class ConversationOrchestrator:
         self._pending_location_category: Optional[str] = None
         self._pending_external_text: Optional[str] = None
 
+    def set_system_prompt(self, system_prompt: str, persona_name: Optional[str] = None) -> None:
+        self.system_prompt = system_prompt
+        if persona_name:
+            self.persona_name = persona_name
+
     async def process_voice_input(self, duration: Optional[float] = None) -> str:
         """Record -> STT -> text processing."""
         if not self.enable_voice or not self.stt:
-            self.logger.warning("音声入力が無効化されているためテキストモードで続行します")
+            self.logger.warning("Voice input requested but STT is unavailable; continuing in text mode.")
             return ""
         try:
             audio, sample_rate = self.stt.record_audio(duration or 5.0)
@@ -97,7 +104,9 @@ class ConversationOrchestrator:
                 lambda: self.stt.transcribe(audio, sample_rate),
                 max_attempts=self.retry_attempts,
                 base_delay=self.retry_delay,
-                on_retry=lambda attempt, exc: self.logger.warning("音声認識をリトライします", attempt=attempt),
+                on_retry=lambda attempt, exc: self.logger.warning(
+                    "Retrying STT transcription", attempt=attempt, error=exc
+                ),
             )
             return await self.process_text_input(text)
         except Exception as exc:
@@ -118,7 +127,7 @@ class ConversationOrchestrator:
         # (1) Pending external confirmation
         if self._pending_external_confirm:
             self._pending_external_confirm = False
-            if sanitized_text.strip().lower() in {"y", "yes", "はい"}:
+            if sanitized_text.strip().lower() in {"y", "yes", "はい", "ok"}:
                 self._external_allowed = True
                 category = self._pending_external_category
                 original = self._pending_external_text or sanitized_text
@@ -127,14 +136,14 @@ class ConversationOrchestrator:
                 if category == "weather":
                     self._pending_location_category = "weather"
                     prompt = "地域名を教えてください（例: 東京/奈良市）"
-                    self.session.add_message("assistant", prompt)
+                    self.session.add_message("assistant", prompt, metadata={"persona": self.persona_name})
                     self.session.save_session()
                     return prompt
                 return await self._process_text_with_llm(original, notice=guard_result.notice)
             self._pending_external_category = None
             self._pending_external_text = None
-            guidance = "外部アクセスなしで進めます。地域名や手元の最新情報を教えていただければ要約します。"
-            self.session.add_message("assistant", guidance)
+            guidance = "外部アクセスなしで進めます。地域名や手元の最新情報を教えてもらえれば要約します。"
+            self.session.add_message("assistant", guidance, metadata={"persona": self.persona_name})
             self.session.save_session()
             return guidance
 
@@ -143,13 +152,14 @@ class ConversationOrchestrator:
             location_result = self._apply_guard(sanitized_text, for_external=True)
             if location_result.blocked:
                 self._pending_location_category = None
-                self.session.add_message("assistant", location_result.notice or "")
+                message = location_result.notice or "外部送信を中止しました。"
+                self.session.add_message("assistant", message, metadata={"persona": self.persona_name})
                 self.session.save_session()
-                return location_result.notice or "外部送信を中止しました。"
+                return message
             location = location_result.text.strip()
             if not location:
                 prompt = "地域名を教えてください（例: 東京/奈良市）"
-                self.session.add_message("assistant", prompt)
+                self.session.add_message("assistant", prompt, metadata={"persona": self.persona_name})
                 self.session.save_session()
                 return prompt
             self._pending_location_category = None
@@ -160,12 +170,12 @@ class ConversationOrchestrator:
         if category:
             if self.allowed_categories and category not in self.allowed_categories:
                 guidance = "このカテゴリの外部アクセスは許可されていません。匿名化した情報を直接入力してください。"
-                self.session.add_message("assistant", guidance)
+                self.session.add_message("assistant", guidance, metadata={"persona": self.persona_name})
                 self.session.save_session()
                 return guidance
             if self.external_mode == "deny":
                 guidance = "外部アクセスは無効です。地域名や最新情報を入力いただければ要約します。"
-                self.session.add_message("assistant", guidance)
+                self.session.add_message("assistant", guidance, metadata={"persona": self.persona_name})
                 self.session.save_session()
                 return guidance
             if self.external_mode == "ask" and not self._external_allowed:
@@ -173,13 +183,13 @@ class ConversationOrchestrator:
                 self._pending_external_confirm = True
                 self._pending_external_category = category
                 self._pending_external_text = sanitized_text
-                self.session.add_message("assistant", prompt)
+                self.session.add_message("assistant", prompt, metadata={"persona": self.persona_name})
                 self.session.save_session()
                 return prompt
             if category == "weather":
                 self._pending_location_category = category
                 prompt = "地域名を教えてください（例: 東京/奈良市）"
-                self.session.add_message("assistant", prompt)
+                self.session.add_message("assistant", prompt, metadata={"persona": self.persona_name})
                 self.session.save_session()
                 return prompt
 
@@ -212,11 +222,11 @@ class ConversationOrchestrator:
                 message = f"天気取得に失敗しました: {result.error}"
             if notice:
                 message = f"{notice}\n{message}"
-            self.session.add_message("assistant", message)
+            self.session.add_message("assistant", message, metadata={"persona": self.persona_name})
             self.session.save_session()
             return message
         fallback = "外部アクセスなしで対応します。関連情報を教えてください。"
-        self.session.add_message("assistant", fallback)
+        self.session.add_message("assistant", fallback, metadata={"persona": self.persona_name})
         self.session.save_session()
         return fallback
 
@@ -239,17 +249,17 @@ class ConversationOrchestrator:
             if tool_name in self.tools.tools:
                 result = await self.tools.execute(tool_name, tool_args or {})
                 message = str(result.result or result.error or "")
-                self.session.add_message("assistant", message)
+                self.session.add_message("assistant", message, metadata={"persona": self.persona_name})
                 self.session.save_session()
                 return message
             retry_context = context + [
-                {"role": "system", "content": "ツール呼び出しのJSONは出さず、日本語の自然文で回答してください。"}
+                {"role": "system", "content": "ツール呼び出し用JSONは出さず、日本語の自然文で回答してください。"},
             ]
             retry_text = await self._generate_text(retry_context)
             retry_name, _ = _parse_tool_like(retry_text)
             if retry_name:
                 guidance = "内部ツール形式の返答が出ました。普通の文章で言い直してください。"
-                self.session.add_message("assistant", guidance)
+                self.session.add_message("assistant", guidance, metadata={"persona": self.persona_name})
                 self.session.save_session()
                 return guidance
             response_text = retry_text
@@ -257,7 +267,7 @@ class ConversationOrchestrator:
         if notice:
             response_text = f"{notice}\n{response_text}"
 
-        self.session.add_message("assistant", response_text)
+        self.session.add_message("assistant", response_text, metadata={"persona": self.persona_name})
         self.session.save_session()
 
         if self.enable_tts and self.tts:
@@ -265,7 +275,7 @@ class ConversationOrchestrator:
                 audio = await self.tts.synthesize(response_text)
                 self.tts.play_audio(audio)
             except Exception as exc:
-                self.logger.warning("音声出力に失敗しました", error=exc)
+                self.logger.warning("TTS synthesis/playback failed", error=exc)
 
         return response_text
 
@@ -277,14 +287,14 @@ class ConversationOrchestrator:
             response_text = "".join(response_parts).strip()
         except Exception as exc:
             self.logger.error(
-                "LLM生成に失敗しました",
+                "LLM responded with an error",
                 error=exc,
                 error_type=exc.__class__.__name__,
                 provider=self.llm.provider.__class__.__name__,
             )
             response_text = (
-                "LLM (Ollama) に接続できない、またはモデルが見つかりません。"
-                " /diagnose で確認し、/config でモデルを qwen2.5-coder:7b などに変更してください。"
+                "LLM (Ollama) に接続できません。/diagnose で状態を確認し、/config でモデル "
+                "設定（例: COMPACK_LLM_OLLAMA_MODEL=qwen2.5-coder:7b）を見直してください。"
             )
         return response_text
 
@@ -294,10 +304,10 @@ class ConversationOrchestrator:
         self.session.add_message(
             "tool",
             str(result.result or result.error),
-            metadata={"tool": tool_name, "success": result.success},
+            metadata={"tool": tool_name, "success": result.success, "persona": self.persona_name},
         )
         self.session.save_session()
         return result.to_dict()
 
     def handle_error(self, error: Exception, context: str) -> None:
-        self.logger.error("処理中にエラーが発生しました", error=error, context=context)
+        self.logger.error("Unexpected error occurred", error=error, context=context)

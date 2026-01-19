@@ -6,10 +6,11 @@ Local-first voice/chat agent with optional cloud providers, privacy controls, an
 1) Python 3.11+ and a virtualenv in the repo root (`.venv` recommended)  
 2) Install the core deps: `pip install -r requirements.txt`  
 3) Copy `.env.example` to `.env` and set OpenAI keys only if you plan to use OpenAI providers  
-4) Run the text-safe entrypoint:  
+4) Run the text-safe entrypoint (or use `scripts/Compack_Text.bat`):  
 ```bash
 python -m apps.compack.main --mode text
 ```
+5) Personas/profile (skeleton): start CLI and use `/agents`, `/agent use dev`, `/profile set name=YourName`
 
 ## Web UI
 - Install extras:  
@@ -56,7 +57,7 @@ Lists audio devices, optional dependencies, chosen providers, and missing env va
 ## Windows Shortcut
 1) Run `apps/compack/scripts/windows/setup_windows.ps1` to create `.venv` and install deps  
 2) Run `apps/compack/scripts/windows/create_desktop_shortcut.ps1` to drop `Compack.lnk` on the desktop  
-3) Double-click the shortcut to start the web UI (`fastapi/uvicorn` required)
+3) Or use repo-root scripts: `scripts/Compack_Text.bat` / `scripts/Compack_Web.bat` (web UI uses text mode by default)
 
 ## Testing
 ```bash

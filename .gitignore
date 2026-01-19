@@ -10,7 +10,6 @@ trader/reports/*
 !trader/reports/.gitkeep
 
 # backups/artifacts
-*.zip
 .venv/
 __pycache__/
 *.pyc
@@ -22,4 +21,10 @@ __pycache__/
 
 # zip artifacts (anywhere)
 **/*.zip
+
+# local persona/profile data (opt-in)
+apps/compack/profile/profile.json
+
+# runtime logs (local only)
+apps/compack/logs/
 

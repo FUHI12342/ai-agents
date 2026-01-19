@@ -2,10 +2,13 @@
 
 ## Compack (voice/text agent)
 
-- Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) / [docs/DATA_FLOW.md](docs/DATA_FLOW.md) / [docs/ROADMAP.md](docs/ROADMAP.md)
+- Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) / [docs/DATA_FLOW.md](docs/DATA_FLOW.md) / [docs/ROADMAP.md](docs/ROADMAP.md) / [docs/ARCHITECTURE_COMPACK_MULTIAGENT.md](docs/ARCHITECTURE_COMPACK_MULTIAGENT.md)
 - Quick start (text mode, new session): `python -m apps.compack.main --mode text --resume new`
+- Windows launchers: `scripts/Compack_Text.bat` (CLI) / `scripts/Compack_Web.bat` (web UI)
+- Personas & profile (skeleton): start CLI and use `/agents`, `/agent use <name>`, `/profile set key=value`
+- GPU verify (Windows): see [docs/GPU_VERIFY_WINDOWS.md](docs/GPU_VERIFY_WINDOWS.md)
 - Diagnostics (includes GPU estimate via ollama ps / nvidia-smi): `python -m apps.compack.main --diagnose --mode text`
-- Desktop shortcuts (Windows): `powershell -ExecutionPolicy Bypass -File scripts/create_shortcuts.ps1`
+- Desktop shortcuts: `powershell -ExecutionPolicy Bypass -File scripts/create_shortcuts.ps1`
 - Verify git/worktree state: `powershell -ExecutionPolicy Bypass -File scripts/git_verify.ps1`
 
 ## Trader Module
