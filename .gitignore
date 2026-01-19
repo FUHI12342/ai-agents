@@ -15,3 +15,11 @@ trader/reports/*
 __pycache__/
 *.pyc
 .hypothesis/
+
+# backups (anywhere)
+**/backups/
+**/backups/**
+
+# zip artifacts (anywhere)
+**/*.zip
+

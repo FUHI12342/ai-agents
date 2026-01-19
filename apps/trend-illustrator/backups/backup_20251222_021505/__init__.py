@@ -1,1 +1,0 @@
-# Trend Illustrator package
