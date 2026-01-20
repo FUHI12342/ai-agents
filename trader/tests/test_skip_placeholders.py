@@ -23,7 +23,8 @@ def test_paper_yahoo_failure_overwrites_summary():
             "--out-dir", out_dir,
             "--data-dir", data_dir
         ]
-        result = subprocess.run(args, capture_output=True, text=True, cwd=os.path.join(os.getcwd(), "trader"))
+        repo_root = Path(__file__).resolve().parents[2]
+        result = subprocess.run(args, capture_output=True, text=True, cwd=repo_root)
         assert result.returncode != 0
 
         # Check summary is overwritten with ERROR

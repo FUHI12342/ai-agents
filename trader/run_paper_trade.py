@@ -9,7 +9,7 @@ from datetime import datetime
 from glob import glob
 from typing import Any, Dict, List, Optional, Tuple
 
-RISK_RE = re.compile(r"^(?P<prefix>[^_]+)_(?P<symbol>.+)_risk_(?P<risk>[\d_]+)\.json$", re.IGNORECASE)_(?P<symbol>.+)_risk_(?P<risk>[\d_]+)\.json$", re.IGNORECASE)
+RISK_RE = re.compile(r"^(?P<prefix>[^_]+)_(?P<symbol>.+)_risk_(?P<risk>[\d_]+)\.json$", re.IGNORECASE)
 
 @dataclass
 class ReportSummary:

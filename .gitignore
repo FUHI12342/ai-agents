@@ -14,6 +14,10 @@ trader/reports/*
 __pycache__/
 *.pyc
 .hypothesis/
+.secrets/
+**/credentials.json
+**/token.json
+scripts/secrets.local.ps1
 
 # backups (anywhere)
 **/backups/

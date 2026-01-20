@@ -103,6 +103,7 @@ def main() -> int:
     p.add_argument("--jpy-per-usdt", type=float, default=150.0)
     p.add_argument("--state-file", default=r"D:\ai-data\paper_state.json")
     p.add_argument("--out-dir", default=os.path.join("trader", "reports"))
+    p.add_argument("--data-dir", default=None, help="Unused (for compatibility)")
     args = p.parse_args()
 
     if ccxt is None:

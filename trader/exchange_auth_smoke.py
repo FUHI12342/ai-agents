@@ -16,6 +16,13 @@ def main() -> int:
     reports_dir.mkdir(exist_ok=True)
     output_file = reports_dir / "auth_smoke_latest.txt"
 
+    if str(getattr(config, "trader_mode", "")).lower() == "paper":
+        result = "SKIPPED: paper mode"
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(result + "\n")
+        print(result)
+        return 0
+
     if not config.is_api_configured():
         result = "SKIPPED: api_not_configured"
         with open(output_file, "w", encoding="utf-8") as f:
