@@ -5,6 +5,7 @@ import re
 from typing import Dict, Optional, Tuple
 
 from apps.compack.core.logger import StructuredLogger
+from apps.compack.core.memory import MemoryManager
 from apps.compack.core.privacy_guard import GuardResult, PrivacyGuard
 from apps.compack.core.session import SessionManager
 from apps.compack.modules import LLMModule, STTModule, TTSModule, ToolManager
@@ -63,6 +64,9 @@ class ConversationOrchestrator:
         system_prompt: str = "",
         profile_name: str = "default",
         persona_name: str = "default",
+        persona_prompt: str = "",
+        memory_manager: Optional[MemoryManager] = None,
+        memory_mode: str = "manual",
     ):
         self.stt = stt
         self.llm = llm
@@ -78,9 +82,12 @@ class ConversationOrchestrator:
         self.external_mode = external_mode
         self.privacy_guard = privacy_guard or PrivacyGuard(mode="off")
         self.allowed_categories = set(allow_external_categories or [])
-        self.system_prompt = system_prompt
+        self.system_prompt = system_prompt  # base policy + profile etc.
         self.profile_name = profile_name
         self.persona_name = persona_name
+        self.persona_prompt = persona_prompt
+        self.memory_manager = memory_manager
+        self.memory_mode = memory_mode
 
         self._external_allowed = external_mode == "allow"
         self._pending_external_confirm = False
@@ -88,10 +95,14 @@ class ConversationOrchestrator:
         self._pending_location_category: Optional[str] = None
         self._pending_external_text: Optional[str] = None
 
-    def set_system_prompt(self, system_prompt: str, persona_name: Optional[str] = None) -> None:
+    def set_system_prompt(
+        self, system_prompt: str, persona_name: Optional[str] = None, persona_prompt: Optional[str] = None
+    ) -> None:
         self.system_prompt = system_prompt
         if persona_name:
             self.persona_name = persona_name
+        if persona_prompt is not None:
+            self.persona_prompt = persona_prompt
 
     async def process_voice_input(self, duration: Optional[float] = None) -> str:
         """Record -> STT -> text processing."""
@@ -240,8 +251,18 @@ class ConversationOrchestrator:
                 joined = "\n".join([f"- {r['match']['preview']}" for r in results])
                 rag_messages.append({"role": "system", "content": f"Knowledge base:\n{joined}"})
         context = rag_messages + context
+        system_parts = []
         if self.system_prompt:
-            context = [{"role": "system", "content": self.system_prompt}] + context
+            system_parts.append(self.system_prompt)
+        if self.memory_manager:
+            exclude = 1 if self.memory_mode == "auto" else 0
+            summary = self.memory_manager.summarize(exclude_latest=exclude)
+            if summary:
+                system_parts.append(f"Memory Summary:\n{summary}")
+        if self.persona_prompt:
+            system_parts.append(self.persona_prompt)
+        if system_parts:
+            context = [{"role": "system", "content": "\n\n".join(system_parts).strip()}] + context
 
         response_text = await self._generate_text(context)
         tool_name, tool_args = _parse_tool_like(response_text)
@@ -269,6 +290,10 @@ class ConversationOrchestrator:
 
         self.session.add_message("assistant", response_text, metadata={"persona": self.persona_name})
         self.session.save_session()
+
+        if self.memory_manager and self.memory_mode == "auto":
+            self.memory_manager.add("user", text, metadata={"persona": self.persona_name})
+            self.memory_manager.add("assistant", response_text, metadata={"persona": self.persona_name})
 
         if self.enable_tts and self.tts:
             try:

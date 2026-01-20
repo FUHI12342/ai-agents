@@ -6,6 +6,7 @@
 - Quick start (text mode, new session): `python -m apps.compack.main --mode text --resume new`
 - Windows launchers: `scripts/Compack_Text.bat` (CLI) / `scripts/Compack_Web.bat` (web UI)
 - Personas & profile (skeleton): start CLI and use `/agents`, `/agent use <name>`, `/profile set key=value`
+- Memory (local JSONL, PR2 draft): see [docs/MEMORY.md](docs/MEMORY.md)
 - GPU verify (Windows): see [docs/GPU_VERIFY_WINDOWS.md](docs/GPU_VERIFY_WINDOWS.md)
 - Diagnostics (includes GPU estimate via ollama ps / nvidia-smi): `python -m apps.compack.main --diagnose --mode text`
 - Desktop shortcuts: `powershell -ExecutionPolicy Bypass -File scripts/create_shortcuts.ps1`

@@ -52,3 +52,6 @@ logging:
 retry:
   max_attempts: 3
   base_delay: 1.0
+
+memory:
+  mode: manual  # manual | auto

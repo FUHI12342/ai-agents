@@ -115,6 +115,7 @@ class ConfigManager:
         retry_cfg = raw.get("retry", {})
         privacy_cfg = raw.get("privacy", {})
         data_cfg = raw.get("data", {})
+        memory_cfg = raw.get("memory", {})
         profile_cfg = raw.get("profile", {})
 
         stt_provider = os.getenv("COMPACK_STT_PROVIDER", stt_cfg.get("provider", "local_whisper"))
@@ -143,6 +144,7 @@ class ConfigManager:
             )
         )
         profile_name = str(os.getenv("COMPACK_PROFILE", profile_cfg.get("name", raw.get("profile_name", "default"))))
+        memory_mode = str(os.getenv("COMPACK_MEMORY_MODE", memory_cfg.get("mode", "manual"))).lower()
 
         config = Config(
             data_dir=base_data_dir,
@@ -156,6 +158,7 @@ class ConfigManager:
             allow_paths=allow_paths,
             system_prompt=system_prompt,
             profile_name=profile_name,
+            memory_mode=memory_mode,
             stt_provider=stt_provider,
             stt_openai_api_key=os.getenv("COMPACK_STT_OPENAI_API_KEY"),
             stt_openai_model=stt_cfg.get("openai", {}).get("model", "whisper-1"),
@@ -189,6 +192,7 @@ class ConfigManager:
             config.kb_dir,
             config.uploads_dir,
             config.config_dir,
+            config.data_dir / "memory",
         ]:
             Path(path).mkdir(parents=True, exist_ok=True)
         if config.log_file:

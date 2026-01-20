@@ -28,3 +28,8 @@ apps/compack/profile/profile.json
 # runtime logs (local only)
 apps/compack/logs/
 
+# local memory (JSONL)
+**/memory.jsonl
+**/data/memory/
+**/data/memory/**
+
