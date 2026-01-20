@@ -4,7 +4,7 @@ import json
 
 from apps.compack.core import ConfigManager, ConversationOrchestrator
 from apps.compack.core.memory import MemoryManager
-from apps.compack.agents import PersonaRegistry, PersonaRouter, assemble_prompt, DEFAULT_BASE_POLICY
+from apps.compack.agents import DEFAULT_BASE_POLICY, PersonaRegistry, PersonaRouter, assemble_prompt
 from apps.compack.profile import ProfileManager
 
 
@@ -134,10 +134,11 @@ class CLIInterface:
         prompt = assemble_prompt(
             base_policy=self.base_policy,
             user_profile=profile_text,
-            persona_block=persona.prompt_block(),
+            persona_block=None,
         )
+        persona_prompt = persona.prompt_block()
         if hasattr(self.orchestrator, "set_system_prompt"):
-            self.orchestrator.set_system_prompt(prompt, persona_name=persona.name)
+            self.orchestrator.set_system_prompt(prompt, persona_name=persona.name, persona_prompt=persona_prompt)
 
     def _refresh_system_prompt(self) -> None:
         persona = self.persona_router.current_persona
@@ -145,10 +146,11 @@ class CLIInterface:
         prompt = assemble_prompt(
             base_policy=self.base_policy,
             user_profile=profile_text,
-            persona_block=persona.prompt_block(),
+            persona_block=None,
         )
+        persona_prompt = persona.prompt_block()
         if hasattr(self.orchestrator, "set_system_prompt"):
-            self.orchestrator.set_system_prompt(prompt, persona_name=persona.name)
+            self.orchestrator.set_system_prompt(prompt, persona_name=persona.name, persona_prompt=persona_prompt)
 
     def _handle_agent_command(self, command: str) -> None:
         parts = command.split()

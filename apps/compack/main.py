@@ -177,8 +177,9 @@ async def main() -> None:
     assembled_prompt = assemble_prompt(
         base_policy=DEFAULT_BASE_POLICY,
         user_profile=profile_manager.format_for_prompt(),
-        persona_block=persona_router.current_persona.prompt_block(),
+        persona_block=None,
     )
+    persona_prompt = persona_router.current_persona.prompt_block()
 
     orchestrator = ConversationOrchestrator(
         stt=stt,
@@ -198,6 +199,7 @@ async def main() -> None:
         system_prompt=assembled_prompt,
         profile_name=config.profile_name,
         persona_name=persona_router.current_persona.name,
+        persona_prompt=persona_prompt,
         memory_manager=memory_manager,
         memory_mode=config.memory_mode,
     )
