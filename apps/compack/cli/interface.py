@@ -1,15 +1,30 @@
 from __future__ import annotations
 
+import json
+
 from apps.compack.core import ConfigManager, ConversationOrchestrator
+from apps.compack.agents import PersonaRegistry, PersonaRouter, assemble_prompt, DEFAULT_BASE_POLICY
+from apps.compack.profile import ProfileManager
 
 
 class CLIInterface:
     """Lightweight CLI interface for Compack."""
 
-    def __init__(self, orchestrator: ConversationOrchestrator, config: ConfigManager):
+    def __init__(
+        self,
+        orchestrator: ConversationOrchestrator,
+        config: ConfigManager,
+        persona_router: PersonaRouter | None = None,
+        profile_manager: ProfileManager | None = None,
+        base_policy: str = DEFAULT_BASE_POLICY,
+    ):
         self.orchestrator = orchestrator
         self.config = config
         self.running = False
+        self.persona_router = persona_router or PersonaRouter(PersonaRegistry())
+        self.profile_manager = profile_manager or ProfileManager()
+        self.base_policy = base_policy
+        self._refresh_system_prompt()
 
     async def start(self, mode: str = "text", resume: str | None = None) -> None:
         """Start the interactive loop."""
@@ -38,13 +53,17 @@ class CLIInterface:
                 await self.orchestrator.process_voice_input()
                 continue
 
+            if self.persona_router.mode == "auto":
+                persona = self.persona_router.route(user_input)
+                self._apply_persona(persona.name)
+
             response = await self.orchestrator.process_text_input(user_input)
             self.display_message("assistant", response)
 
     def display_welcome(self, mode: str) -> None:
         print("=== Compack Voice/Text CLI ===")
         print(f"Mode: {mode}")
-        print("Commands: /help /config /quit")
+        print("Commands: /help /config /quit /agents /agent ... /profile ...")
         if mode == "voice":
             print("Push-to-Talk: press Enter when prompted to record.")
 
@@ -63,10 +82,19 @@ class CLIInterface:
             print("Session saved. Bye.")
             return True
         if cmd in {"/help", "help"}:
-            print("Available commands: /help /config /quit")
+            print("Available commands: /help /config /quit /agents /agent [use|auto|council|status] /profile [show|set|delete|reset]")
             return False
         if cmd in {"/config", "config"}:
             self._display_config()
+            return False
+        if cmd.startswith("/agents"):
+            self._list_agents()
+            return False
+        if cmd.startswith("/agent"):
+            self._handle_agent_command(command)
+            return False
+        if cmd.startswith("/profile"):
+            self._handle_profile_command(command)
             return False
         print("Unknown command. Use /help for the list of commands.")
         return False
@@ -82,6 +110,90 @@ class CLIInterface:
             if "api_key" in key:
                 value = "***"
             print(f"- {key}: {value}")
+        print(f"- persona: {self.persona_router.current_persona.name} (mode={self.persona_router.mode}, council={self.persona_router.council})")
+        print(f"- profile path: {self.profile_manager.path}")
+
+    def _list_agents(self) -> None:
+        print("Personas:")
+        for name, persona in self.persona_router.registry.list().items():
+            marker = "*" if persona.name == self.persona_router.current_persona.name else " "
+            print(f"{marker} {name}: {persona.description}")
+
+    def _apply_persona(self, persona_name: str) -> None:
+        self.persona_router.persona_name = persona_name
+        persona = self.persona_router.registry.get(persona_name)
+        profile_text = self.profile_manager.format_for_prompt()
+        prompt = assemble_prompt(
+            base_policy=self.base_policy,
+            user_profile=profile_text,
+            persona_block=persona.prompt_block(),
+        )
+        if hasattr(self.orchestrator, "set_system_prompt"):
+            self.orchestrator.set_system_prompt(prompt, persona_name=persona.name)
+
+    def _refresh_system_prompt(self) -> None:
+        persona = self.persona_router.current_persona
+        profile_text = self.profile_manager.format_for_prompt()
+        prompt = assemble_prompt(
+            base_policy=self.base_policy,
+            user_profile=profile_text,
+            persona_block=persona.prompt_block(),
+        )
+        if hasattr(self.orchestrator, "set_system_prompt"):
+            self.orchestrator.set_system_prompt(prompt, persona_name=persona.name)
+
+    def _handle_agent_command(self, command: str) -> None:
+        parts = command.split()
+        if len(parts) == 2 and parts[1].lower() == "status":
+            print(f"Agent status: {self.persona_router.status()}")
+            return
+        if len(parts) >= 3 and parts[1].lower() == "use":
+            target = parts[2]
+            persona = self.persona_router.set_manual(target)
+            self._apply_persona(persona.name)
+            print(f"Switched to persona '{persona.name}' (manual mode).")
+            return
+        if len(parts) >= 3 and parts[1].lower() == "auto":
+            on = parts[2].lower() in {"on", "true", "1", "yes"}
+            self.persona_router.set_auto(on)
+            mode = "auto" if on else "manual"
+            print(f"Auto routing {mode}. Current persona: {self.persona_router.current_persona.name}")
+            return
+        if len(parts) >= 3 and parts[1].lower() == "council":
+            on = parts[2].lower() in {"on", "true", "1", "yes"}
+            self.persona_router.set_council(on)
+            state = "on" if on else "off"
+            print(f"Council mode {state} (skeleton; final aggregation not implemented).")
+            return
+        print("Usage: /agents | /agent status | /agent use <name> | /agent auto on|off | /agent council on|off")
+
+    def _handle_profile_command(self, command: str) -> None:
+        parts = command.split()
+        if len(parts) == 2 and parts[1].lower() == "show":
+            print(json.dumps(self.profile_manager.show(), ensure_ascii=False, indent=2))
+            return
+        if len(parts) >= 3 and parts[1].lower() == "set":
+            kv = " ".join(parts[2:])
+            if "=" not in kv:
+                print("Usage: /profile set key=value")
+                return
+            key, value = kv.split("=", 1)
+            self.profile_manager.set_value(key.strip(), value.strip())
+            self._refresh_system_prompt()
+            print(f"Profile updated: {key.strip()}")
+            return
+        if len(parts) >= 3 and parts[1].lower() == "delete":
+            key = parts[2]
+            self.profile_manager.delete_key(key)
+            self._refresh_system_prompt()
+            print(f"Profile key deleted: {key}")
+            return
+        if len(parts) == 2 and parts[1].lower() == "reset":
+            self.profile_manager.reset()
+            self._refresh_system_prompt()
+            print("Profile reset.")
+            return
+        print("Usage: /profile show | /profile set key=value | /profile delete <key> | /profile reset")
 
     def _init_session(self, resume: str | None) -> str | None:
         sessions = self.orchestrator.session.list_sessions()
