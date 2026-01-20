@@ -5,6 +5,7 @@ import re
 from typing import Dict, Optional, Tuple
 
 from apps.compack.core.logger import StructuredLogger
+from apps.compack.core.memory import MemoryManager
 from apps.compack.core.privacy_guard import GuardResult, PrivacyGuard
 from apps.compack.core.session import SessionManager
 from apps.compack.modules import LLMModule, STTModule, TTSModule, ToolManager
@@ -63,6 +64,8 @@ class ConversationOrchestrator:
         system_prompt: str = "",
         profile_name: str = "default",
         persona_name: str = "default",
+        memory_manager: Optional[MemoryManager] = None,
+        memory_mode: str = "manual",
     ):
         self.stt = stt
         self.llm = llm
@@ -81,6 +84,8 @@ class ConversationOrchestrator:
         self.system_prompt = system_prompt
         self.profile_name = profile_name
         self.persona_name = persona_name
+        self.memory_manager = memory_manager
+        self.memory_mode = memory_mode
 
         self._external_allowed = external_mode == "allow"
         self._pending_external_confirm = False
@@ -240,8 +245,14 @@ class ConversationOrchestrator:
                 joined = "\n".join([f"- {r['match']['preview']}" for r in results])
                 rag_messages.append({"role": "system", "content": f"Knowledge base:\n{joined}"})
         context = rag_messages + context
-        if self.system_prompt:
-            context = [{"role": "system", "content": self.system_prompt}] + context
+        system_content = self.system_prompt
+        if self.memory_manager:
+            exclude = 1 if self.memory_mode == "auto" else 0
+            summary = self.memory_manager.summarize(exclude_latest=exclude)
+            if summary:
+                system_content = f"{system_content}\n\nMemory Summary:\n{summary}".strip()
+        if system_content:
+            context = [{"role": "system", "content": system_content}] + context
 
         response_text = await self._generate_text(context)
         tool_name, tool_args = _parse_tool_like(response_text)
@@ -269,6 +280,10 @@ class ConversationOrchestrator:
 
         self.session.add_message("assistant", response_text, metadata={"persona": self.persona_name})
         self.session.save_session()
+
+        if self.memory_manager and self.memory_mode == "auto":
+            self.memory_manager.add("user", text, metadata={"persona": self.persona_name})
+            self.memory_manager.add("assistant", response_text, metadata={"persona": self.persona_name})
 
         if self.enable_tts and self.tts:
             try:

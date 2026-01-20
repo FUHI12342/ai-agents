@@ -28,6 +28,7 @@ class Config:
     allow_paths: List[str] = None
     system_prompt: str = ""
     profile_name: str = "default"
+    memory_mode: str = "manual"  # manual | auto
 
     # STT
     stt_openai_api_key: Optional[str] = None
@@ -93,6 +94,7 @@ class Config:
             "allow_paths": self.allow_paths or [],
             "system_prompt": self.system_prompt,
             "profile_name": self.profile_name,
+            "memory_mode": self.memory_mode,
             "stt_provider": self.stt_provider,
             "stt_openai_api_key": self.stt_openai_api_key,
             "stt_openai_model": self.stt_openai_model,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from apps.compack.core import ConfigManager, ConversationOrchestrator
+from apps.compack.core.memory import MemoryManager
 from apps.compack.agents import PersonaRegistry, PersonaRouter, assemble_prompt, DEFAULT_BASE_POLICY
 from apps.compack.profile import ProfileManager
 
@@ -16,6 +17,7 @@ class CLIInterface:
         config: ConfigManager,
         persona_router: PersonaRouter | None = None,
         profile_manager: ProfileManager | None = None,
+        memory_manager: MemoryManager | None = None,
         base_policy: str = DEFAULT_BASE_POLICY,
     ):
         self.orchestrator = orchestrator
@@ -23,6 +25,7 @@ class CLIInterface:
         self.running = False
         self.persona_router = persona_router or PersonaRouter(PersonaRegistry())
         self.profile_manager = profile_manager or ProfileManager()
+        self.memory_manager = memory_manager
         self.base_policy = base_policy
         self._refresh_system_prompt()
 
@@ -63,7 +66,7 @@ class CLIInterface:
     def display_welcome(self, mode: str) -> None:
         print("=== Compack Voice/Text CLI ===")
         print(f"Mode: {mode}")
-        print("Commands: /help /config /quit /agents /agent ... /profile ...")
+        print("Commands: /help /config /quit /agents /agent ... /profile ... /memory ...")
         if mode == "voice":
             print("Push-to-Talk: press Enter when prompted to record.")
 
@@ -82,7 +85,7 @@ class CLIInterface:
             print("Session saved. Bye.")
             return True
         if cmd in {"/help", "help"}:
-            print("Available commands: /help /config /quit /agents /agent [use|auto|council|status] /profile [show|set|delete|reset]")
+            print("Available commands: /help /config /quit /agents /agent [use|auto|council|status] /profile [show|set|delete|reset] /memory [status|add|show]")
             return False
         if cmd in {"/config", "config"}:
             self._display_config()
@@ -95,6 +98,9 @@ class CLIInterface:
             return False
         if cmd.startswith("/profile"):
             self._handle_profile_command(command)
+            return False
+        if cmd.startswith("/memory"):
+            self._handle_memory_command(command)
             return False
         print("Unknown command. Use /help for the list of commands.")
         return False
@@ -112,6 +118,8 @@ class CLIInterface:
             print(f"- {key}: {value}")
         print(f"- persona: {self.persona_router.current_persona.name} (mode={self.persona_router.mode}, council={self.persona_router.council})")
         print(f"- profile path: {self.profile_manager.path}")
+        if self.memory_manager:
+            print(f"- memory path: {self.memory_manager.path}")
 
     def _list_agents(self) -> None:
         print("Personas:")
@@ -194,6 +202,33 @@ class CLIInterface:
             print("Profile reset.")
             return
         print("Usage: /profile show | /profile set key=value | /profile delete <key> | /profile reset")
+
+    def _handle_memory_command(self, command: str) -> None:
+        if not self.memory_manager:
+            print("Memory manager is disabled.")
+            return
+        parts = command.split()
+        if len(parts) == 2 and parts[1].lower() == "status":
+            print(json.dumps(self.memory_manager.status(), ensure_ascii=False, indent=2))
+            return
+        if len(parts) >= 3 and parts[1].lower() == "add":
+            text = " ".join(parts[2:]).strip()
+            if not text:
+                print("Usage: /memory add <text>")
+                return
+            self.memory_manager.add("user", text, metadata={"source": "manual", "persona": self.persona_router.current_persona.name})
+            print("Memory added.")
+            return
+        if len(parts) >= 2 and parts[1].lower() == "show":
+            limit = 5
+            if len(parts) >= 3:
+                try:
+                    limit = int(parts[2])
+                except ValueError:
+                    pass
+            print(json.dumps(self.memory_manager.show(limit=limit), ensure_ascii=False, indent=2))
+            return
+        print("Usage: /memory status | /memory add <text> | /memory show [n]")
 
     def _init_session(self, resume: str | None) -> str | None:
         sessions = self.orchestrator.session.list_sessions()

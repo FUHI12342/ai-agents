@@ -10,6 +10,7 @@ from typing import Optional
 from apps.compack.agents import DEFAULT_BASE_POLICY, PersonaRegistry, PersonaRouter, assemble_prompt
 from apps.compack.cli.interface import CLIInterface
 from apps.compack.core import ConfigManager, ConversationOrchestrator, KBManager, SessionManager, StructuredLogger
+from apps.compack.core.memory import MemoryManager
 from apps.compack.core.privacy_guard import PrivacyGuard
 from apps.compack.models import Config
 from apps.compack.modules import LLMModule, STTModule, TTSModule, ToolManager
@@ -115,9 +116,11 @@ async def main() -> None:
     if args.profile:
         config.profile_name = args.profile
 
-    persona_registry = PersonaRegistry()
-    persona_router = PersonaRouter(persona_registry, persona_name=args.persona or "default")
+    registry = PersonaRegistry()
+    persona_router = PersonaRouter(registry=registry, persona_name=args.persona or "default")
     profile_manager = ProfileManager()
+    memory_path = config.data_dir / "memory" / "memory.jsonl"
+    memory_manager = MemoryManager(path=memory_path, mode=config.memory_mode)
 
     if args.subcommand == "kb":
         logger = StructuredLogger(log_file=None, level="INFO")
@@ -195,6 +198,8 @@ async def main() -> None:
         system_prompt=assembled_prompt,
         profile_name=config.profile_name,
         persona_name=persona_router.current_persona.name,
+        memory_manager=memory_manager,
+        memory_mode=config.memory_mode,
     )
     if args.ui == "web":
         start_web_ui(orchestrator, host="127.0.0.1", port=8765, open_browser=args.open_browser)
@@ -204,6 +209,7 @@ async def main() -> None:
             config_manager,
             persona_router=persona_router,
             profile_manager=profile_manager,
+            memory_manager=memory_manager,
             base_policy=DEFAULT_BASE_POLICY,
         )
         await cli.start(mode=args.mode, resume=args.resume)
