@@ -67,6 +67,8 @@ class ConversationOrchestrator:
         persona_prompt: str = "",
         memory_manager: Optional[MemoryManager] = None,
         memory_mode: str = "manual",
+        rag_enabled: bool = True,
+        rag_top_k: int = 3,
     ):
         self.stt = stt
         self.llm = llm
@@ -88,6 +90,8 @@ class ConversationOrchestrator:
         self.persona_prompt = persona_prompt
         self.memory_manager = memory_manager
         self.memory_mode = memory_mode
+        self.rag_enabled = rag_enabled
+        self.rag_top_k = rag_top_k
 
         self._external_allowed = external_mode == "allow"
         self._pending_external_confirm = False
@@ -244,13 +248,12 @@ class ConversationOrchestrator:
     async def _process_text_with_llm(self, text: str, notice: Optional[str] = None) -> str:
         self.session.add_message("user", text)
         context = self.session.get_context()
-        rag_messages = []
-        if self.kb:
-            results = self.kb.search(text, top_k=3)
+        retrieved_context = None
+        if self.kb and self.rag_enabled and not _looks_like_code_or_path(text):
+            results = self.kb.search(text, top_k=self.rag_top_k, persona=self.persona_name)
             if results:
-                joined = "\n".join([f"- {r['match']['preview']}" for r in results])
-                rag_messages.append({"role": "system", "content": f"Knowledge base:\n{joined}"})
-        context = rag_messages + context
+                previews = [f"- {r['match']['preview']}" for r in results]
+                retrieved_context = "Retrieved Context:\n" + "\n".join(previews)
         system_parts = []
         if self.system_prompt:
             system_parts.append(self.system_prompt)
@@ -259,6 +262,8 @@ class ConversationOrchestrator:
             summary = self.memory_manager.summarize(exclude_latest=exclude)
             if summary:
                 system_parts.append(f"Memory Summary:\n{summary}")
+        if retrieved_context:
+            system_parts.append(retrieved_context)
         if self.persona_prompt:
             system_parts.append(self.persona_prompt)
         if system_parts:
