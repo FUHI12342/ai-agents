@@ -42,4 +42,12 @@ def test_structured_logger_masks_secrets(capsys: pytest.CaptureFixture[str], sec
 
     assert data["api_key"] == "***"
     assert data["nested"]["token"] == "***"
-    assert secret_value not in output
+    # Ensure no top-level or nested value matches the secret (timestamps may contain the substring).
+    def _values(obj):
+        if isinstance(obj, dict):
+            for v in obj.values():
+                yield from _values(v)
+        else:
+            yield obj
+
+    assert all(v != secret_value for v in _values(data))

@@ -33,3 +33,6 @@ apps/compack/logs/
 **/data/memory/
 **/data/memory/**
 
+# local KB data
+**/data/kb/**
+

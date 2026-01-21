@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
-from apps.compack.core import ConfigManager, ConversationOrchestrator
-from apps.compack.core.memory import MemoryManager
 from apps.compack.agents import DEFAULT_BASE_POLICY, PersonaRegistry, PersonaRouter, assemble_prompt
+from apps.compack.core import ConfigManager, ConversationOrchestrator
+from apps.compack.core.kb import KBManager
+from apps.compack.core.memory import MemoryManager
 from apps.compack.profile import ProfileManager
 
 
@@ -18,6 +20,7 @@ class CLIInterface:
         persona_router: PersonaRouter | None = None,
         profile_manager: ProfileManager | None = None,
         memory_manager: MemoryManager | None = None,
+        kb_manager: KBManager | None = None,
         base_policy: str = DEFAULT_BASE_POLICY,
     ):
         self.orchestrator = orchestrator
@@ -26,6 +29,7 @@ class CLIInterface:
         self.persona_router = persona_router or PersonaRouter(PersonaRegistry())
         self.profile_manager = profile_manager or ProfileManager()
         self.memory_manager = memory_manager
+        self.kb_manager = kb_manager
         self.base_policy = base_policy
         self._refresh_system_prompt()
 
@@ -66,7 +70,7 @@ class CLIInterface:
     def display_welcome(self, mode: str) -> None:
         print("=== Compack Voice/Text CLI ===")
         print(f"Mode: {mode}")
-        print("Commands: /help /config /quit /agents /agent ... /profile ... /memory ...")
+        print("Commands: /help /config /quit /agents /agent ... /profile ... /memory [status|show|add|delete|clear] /kb ...")
         if mode == "voice":
             print("Push-to-Talk: press Enter when prompted to record.")
 
@@ -85,7 +89,10 @@ class CLIInterface:
             print("Session saved. Bye.")
             return True
         if cmd in {"/help", "help"}:
-            print("Available commands: /help /config /quit /agents /agent [use|auto|council|status] /profile [show|set|delete|reset] /memory [status|add|show]")
+            print(
+                "Available commands: /help /config /quit /agents /agent [use|auto|council|status] "
+                "/profile [show|set|delete|reset] /memory [status|show|add|delete|clear] /kb [status|add]"
+            )
             return False
         if cmd in {"/config", "config"}:
             self._display_config()
@@ -98,6 +105,9 @@ class CLIInterface:
             return False
         if cmd.startswith("/profile"):
             self._handle_profile_command(command)
+            return False
+        if cmd.startswith("/kb"):
+            self._handle_kb_command(command)
             return False
         if cmd.startswith("/memory"):
             self._handle_memory_command(command)
@@ -120,6 +130,8 @@ class CLIInterface:
         print(f"- profile path: {self.profile_manager.path}")
         if self.memory_manager:
             print(f"- memory path: {self.memory_manager.path}")
+        if self.kb_manager:
+            print(f"- kb dir: {self.kb_manager.kb_dir}")
 
     def _list_agents(self) -> None:
         print("Personas:")
@@ -231,6 +243,25 @@ class CLIInterface:
             print(json.dumps(self.memory_manager.show(limit=limit), ensure_ascii=False, indent=2))
             return
         print("Usage: /memory status | /memory add <text> | /memory show [n]")
+
+    def _handle_kb_command(self, command: str) -> None:
+        if not self.kb_manager:
+            print("KB manager is disabled.")
+            return
+        parts = command.split()
+        if len(parts) == 2 and parts[1].lower() == "status":
+            print(json.dumps(self.kb_manager.status(), ensure_ascii=False, indent=2))
+            return
+        if len(parts) >= 3 and parts[1].lower() == "add":
+            path = parts[2]
+            persona = parts[3] if len(parts) >= 4 else self.persona_router.current_persona.name
+            try:
+                added = self.kb_manager.add_path(Path(path), persona=persona)
+                print(f"KB added {added} entries to persona '{persona}'.")
+            except Exception as exc:
+                print(f"Failed to add KB path: {exc}")
+            return
+        print("Usage: /kb status | /kb add <path> [persona]")
 
     def _init_session(self, resume: str | None) -> str | None:
         sessions = self.orchestrator.session.list_sessions()

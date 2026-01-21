@@ -91,7 +91,7 @@ def build_tts(config: Config, logger: StructuredLogger) -> Optional[TTSModule]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Compack (魂魄) CLI")
+    parser = argparse.ArgumentParser(description="Compack CLI")
     parser.add_argument("--mode", choices=["text", "voice"], default="text", help="text: 音声依存なし / voice: 音声入出力")
     parser.add_argument("--diagnose", action="store_true", help="環境診断を実行して終了")
     parser.add_argument("--config", type=str, help="config.yaml のパスを上書き")
@@ -105,7 +105,8 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="subcommand")
     kb = sub.add_parser("kb", help="ローカルKB操作")
     kb.add_argument("action", choices=["add", "status"])
-    kb.add_argument("path", nargs="?", help="取り込みファイル/ディレクトリ (add時必須)")
+    kb.add_argument("path", nargs="?", help="取り込みファイル/ディレクトリ (add時のみ)")
+    kb.add_argument("--persona", help="取り込み先persona（省略時はdefault）")
     return parser.parse_args()
 
 
@@ -129,8 +130,9 @@ async def main() -> None:
             if not args.path:
                 print("パスを指定してください: compack kb add <path>")
                 sys.exit(1)
-            added = kb.add_path(Path(args.path))
-            print(f"追加完了: {added} 件")
+            persona = args.persona or "default"
+            added = kb.add_path(Path(args.path), persona=persona)
+            print(f"追加完了 {added} 件 (persona={persona})")
         else:
             print(json.dumps(kb.status(), ensure_ascii=False, indent=2))
         return
@@ -202,6 +204,8 @@ async def main() -> None:
         persona_prompt=persona_prompt,
         memory_manager=memory_manager,
         memory_mode=config.memory_mode,
+        rag_enabled=config.rag_enabled,
+        rag_top_k=config.rag_top_k,
     )
     if args.ui == "web":
         start_web_ui(orchestrator, host="127.0.0.1", port=8765, open_browser=args.open_browser)
@@ -212,6 +216,7 @@ async def main() -> None:
             persona_router=persona_router,
             profile_manager=profile_manager,
             memory_manager=memory_manager,
+            kb_manager=kb_manager,
             base_policy=DEFAULT_BASE_POLICY,
         )
         await cli.start(mode=args.mode, resume=args.resume)

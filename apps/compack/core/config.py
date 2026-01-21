@@ -10,6 +10,28 @@ from dotenv import load_dotenv
 from apps.compack.models import Config
 
 
+def _parse_bool_env(value: Optional[str], default: bool) -> bool:
+    if value is None:
+        return default
+    v = value.strip().lower()
+    if v in {"1", "true", "yes", "y", "on"}:
+        return True
+    if v in {"0", "false", "no", "n", "off"}:
+        return False
+    return default
+
+
+def _parse_int_env(value: Optional[str], fallback: Any, default: int = 0, min_value: int = 0, max_value: Optional[int] = None) -> int:
+    try:
+        result = int(value) if value is not None else int(fallback)
+    except Exception:
+        result = default
+    if max_value is not None:
+        result = min(result, max_value)
+    result = max(min_value, result)
+    return result
+
+
 ALLOWED_STT = {"openai_whisper", "local_whisper"}
 ALLOWED_LLM = {"openai_gpt4", "ollama"}
 ALLOWED_TTS = {"openai_tts", "pyttsx3"}
@@ -116,6 +138,7 @@ class ConfigManager:
         privacy_cfg = raw.get("privacy", {})
         data_cfg = raw.get("data", {})
         memory_cfg = raw.get("memory", {})
+        rag_cfg = raw.get("rag", {})
         profile_cfg = raw.get("profile", {})
 
         stt_provider = os.getenv("COMPACK_STT_PROVIDER", stt_cfg.get("provider", "local_whisper"))
@@ -145,6 +168,15 @@ class ConfigManager:
         )
         profile_name = str(os.getenv("COMPACK_PROFILE", profile_cfg.get("name", raw.get("profile_name", "default"))))
         memory_mode = str(os.getenv("COMPACK_MEMORY_MODE", memory_cfg.get("mode", "manual"))).lower()
+        env_rag_enabled = os.getenv("COMPACK_RAG_ENABLED")
+        rag_enabled = _parse_bool_env(env_rag_enabled, bool(rag_cfg.get("enabled", True)))
+
+        env_rag_top_k = os.getenv("COMPACK_RAG_TOP_K")
+        try:
+            rag_top_k = int(env_rag_top_k) if env_rag_top_k is not None else int(rag_cfg.get("top_k", 3))
+        except Exception:
+            rag_top_k = int(rag_cfg.get("top_k", 3))
+        rag_top_k = max(0, rag_top_k)
 
         config = Config(
             data_dir=base_data_dir,
@@ -159,6 +191,8 @@ class ConfigManager:
             system_prompt=system_prompt,
             profile_name=profile_name,
             memory_mode=memory_mode,
+            rag_enabled=rag_enabled,
+            rag_top_k=rag_top_k,
             stt_provider=stt_provider,
             stt_openai_api_key=os.getenv("COMPACK_STT_OPENAI_API_KEY"),
             stt_openai_model=stt_cfg.get("openai", {}).get("model", "whisper-1"),

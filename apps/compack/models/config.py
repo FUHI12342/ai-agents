@@ -29,6 +29,8 @@ class Config:
     system_prompt: str = ""
     profile_name: str = "default"
     memory_mode: str = "manual"  # manual | auto
+    rag_enabled: bool = True
+    rag_top_k: int = 3
 
     # STT
     stt_openai_api_key: Optional[str] = None
@@ -95,6 +97,8 @@ class Config:
             "system_prompt": self.system_prompt,
             "profile_name": self.profile_name,
             "memory_mode": self.memory_mode,
+            "rag_enabled": self.rag_enabled,
+            "rag_top_k": self.rag_top_k,
             "stt_provider": self.stt_provider,
             "stt_openai_api_key": self.stt_openai_api_key,
             "stt_openai_model": self.stt_openai_model,
