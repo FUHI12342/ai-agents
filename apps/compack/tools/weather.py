@@ -34,12 +34,39 @@ class WeatherTool(Tool):
 
         encoded = urllib.parse.quote(location)
         url = f"https://wttr.in/{encoded}?format=j1"
-        resp = await asyncio.to_thread(requests.get, url, timeout=5)
-        resp.raise_for_status()
-        data = resp.json()
-
-        summary = self._summarize(data)
-        return summary
+        
+        # Retry logic with increased timeout
+        max_retries = 2
+        timeout = 12
+        
+        for attempt in range(max_retries + 1):
+            try:
+                resp = await asyncio.to_thread(requests.get, url, timeout=timeout)
+                resp.raise_for_status()
+                data = resp.json()
+                
+                # Validate response structure
+                if not isinstance(data, dict) or not data.get("current_condition"):
+                    raise ValueError("Invalid weather data structure")
+                
+                summary = self._summarize(data)
+                return summary
+                
+            except (requests.exceptions.RequestException, ValueError, KeyError) as e:
+                if attempt < max_retries:
+                    # Wait before retry
+                    await asyncio.sleep(1)
+                    continue
+                else:
+                    # Final attempt failed - return error info instead of false data
+                    return {
+                        "summary": f"天気情報の取得に失敗しました: {str(e)}",
+                        "current": {"tempC": None, "feelsLikeC": None, "description": "取得失敗"},
+                        "today": {"date": None, "maxtempC": None, "mintempC": None, "chanceOfRain": None},
+                        "tomorrow": {},
+                        "source": "wttr.in (error)",
+                        "error": str(e)
+                    }
 
     def _summarize(self, payload: Dict) -> Dict[str, object]:
         current = (payload.get("current_condition") or [{}])[0]
