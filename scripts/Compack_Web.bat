@@ -12,7 +12,7 @@ IF EXIST "%REPO_DIR%\.venv\Scripts\activate.bat" (
 
 python -m apps.compack.main --mode text --ui web --open-browser --resume new
 IF %ERRORLEVEL% NEQ 0 (
-    echo Compack (web) failed to start.
+    echo Compack web failed to start.
     pause
 )
 

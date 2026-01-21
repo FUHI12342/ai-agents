@@ -2,6 +2,10 @@
 
 Local-first voice/chat agent with optional cloud providers, privacy controls, and a minimal web UI.
 
+## 起動はこの2つ
+- **テキスト起動**: `<repo_root>\Compack_Text.bat` (CLI)
+- **Web起動**: `<repo_root>\scripts\Compack_Web.bat` (Web UI)
+
 ## Quick Start
 1) Python 3.11+ and a virtualenv in the repo root (`.venv` recommended)  
 2) Install the core deps: `pip install -r requirements.txt`  

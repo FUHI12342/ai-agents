@@ -8,8 +8,8 @@ from typing import Optional
 from apps.compack.core import ConversationOrchestrator
 
 
-def start_web_ui(orchestrator: ConversationOrchestrator, host: str = "127.0.0.1", port: int = 8765, open_browser: bool = False) -> None:
-    """Launch a minimal FastAPI-based web UI."""
+async def serve_web_ui(orchestrator: ConversationOrchestrator, host: str = "127.0.0.1", port: int = 8765, open_browser: bool = False) -> None:
+    """Launch a minimal FastAPI-based web UI using async server."""
     try:
         from fastapi import FastAPI
         from fastapi.responses import HTMLResponse, JSONResponse
@@ -53,4 +53,12 @@ async function send() {
     if open_browser:
         threading.Timer(1.0, lambda: webbrowser.open(f"http://{host}:{port}")).start()
 
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    # Use uvicorn.Server with await instead of uvicorn.run to avoid nested asyncio.run
+    config = uvicorn.Config(app, host=host, port=port, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
+def start_web_ui(orchestrator: ConversationOrchestrator, host: str = "127.0.0.1", port: int = 8765, open_browser: bool = False) -> None:
+    """Launch a minimal FastAPI-based web UI (non-async wrapper)."""
+    asyncio.run(serve_web_ui(orchestrator, host, port, open_browser))

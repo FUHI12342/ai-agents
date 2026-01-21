@@ -2,9 +2,13 @@
 
 ## Compack (voice/text agent)
 
+### 起動はこの2つ
+- **テキスト起動**: `Compack_Text.bat` (CLI)
+- **Web起動**: `scripts\Compack_Web.bat` (Web UI)
+
+### その他
 - Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) / [docs/DATA_FLOW.md](docs/DATA_FLOW.md) / [docs/ROADMAP.md](docs/ROADMAP.md) / [docs/ARCHITECTURE_COMPACK_MULTIAGENT.md](docs/ARCHITECTURE_COMPACK_MULTIAGENT.md)
 - Quick start (text mode, new session): `python -m apps.compack.main --mode text --resume new`
-- Windows launchers: `scripts/Compack_Text.bat` (CLI) / `scripts/Compack_Web.bat` (web UI)
 - Personas & profile (skeleton): start CLI and use `/agents`, `/agent use <name>`, `/profile set key=value`
 - Memory (local JSONL, PR2 draft): see [docs/MEMORY.md](docs/MEMORY.md)
 - RAG / KB (persona-aware, PR3 draft): see [docs/RAG_KB.md](docs/RAG_KB.md)
