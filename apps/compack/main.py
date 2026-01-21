@@ -20,7 +20,7 @@ from apps.compack.providers.stt import LocalWhisperSTT, OpenAIWhisperSTT
 from apps.compack.providers.tts import OpenAITTSTTS, Pyttsx3TTS
 from apps.compack.tools import SaveMemoTool, SearchFilesTool, SetTimerTool, WeatherTool
 from apps.compack.utils.diagnostics import run_diagnostics
-from apps.compack.ui.web import start_web_ui
+from apps.compack.ui.web import start_web_ui, serve_web_ui
 
 
 def build_logger(config_manager: ConfigManager) -> StructuredLogger:
@@ -208,7 +208,7 @@ async def main() -> None:
         rag_top_k=config.rag_top_k,
     )
     if args.ui == "web":
-        start_web_ui(orchestrator, host="127.0.0.1", port=8765, open_browser=args.open_browser)
+        await serve_web_ui(orchestrator, host="127.0.0.1", port=8765, open_browser=args.open_browser)
     else:
         cli = CLIInterface(
             orchestrator,
