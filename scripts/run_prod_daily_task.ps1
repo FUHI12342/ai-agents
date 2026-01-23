@@ -25,10 +25,10 @@ function Set-EnvIfEmpty([string]$Name, [string]$Value) {
     }
 }
 
-Set-EnvIfEmpty "TRADER_DATA_DIR"   "D:\ai-data\trader\data"
+Set-EnvIfEmpty "TRADER_DATA_DIR" "D:\ai-data\trader\data"
 Set-EnvIfEmpty "TRADER_REPORTS_DIR" "D:\ai-data\trader\reports"
-Set-EnvIfEmpty "TRADER_STATE_DIR"  "D:\ai-data\trader\state"
-Set-EnvIfEmpty "TRADER_LOG_DIR"    "D:\ai-data\trader\logs"
+Set-EnvIfEmpty "TRADER_STATE_DIR" "D:\ai-data\trader\state"
+Set-EnvIfEmpty "TRADER_LOG_DIR" "D:\ai-data\trader\logs"
 Set-EnvIfEmpty "TRADER_DOTENV_PATH" ".env.prod"
 
 Write-Host "[INFO] Calling main production script..."
