@@ -10,7 +10,7 @@ import argparse
 import subprocess
 from pathlib import Path
 
-from .config import load_config, BASE_DIR
+from .config import load_config, BASE_DIR, REPORTS_DIR
 from .brokers import create_broker
 from .ledger import Ledger
 
@@ -50,7 +50,7 @@ def main():
     time_in_force = args.time_in_force
 
     broker = create_broker(config)
-    ledger = Ledger(BASE_DIR / "reports")
+    ledger = Ledger(REPORTS_DIR)
 
     print(f"[ORDER] Placing {side.upper()} limit order for {min_notional} {config.quote_ccy} on {symbol}")
 
@@ -111,7 +111,7 @@ def main():
     result = subprocess.run([sys.executable, '-m', 'trader.reconcile_live'], capture_output=True, text=True)
     reconcile_ok = result.returncode == 0
     reconcile_reason = 'UNKNOWN'
-    reconcile_json_file = BASE_DIR / "reports" / "reconcile_latest.json"
+    reconcile_json_file = REPORTS_DIR / "reconcile_latest.json"
     if reconcile_json_file.exists():
         try:
             with open(reconcile_json_file, 'r') as f:
@@ -125,7 +125,7 @@ def main():
     balance = broker.fetch_balance()
 
     # Write summary
-    summary_file = BASE_DIR / "reports" / "testnet_one_order_latest.txt"
+    summary_file = REPORTS_DIR / "testnet_one_order_latest.txt"
     summary_file.parent.mkdir(parents=True, exist_ok=True)
     with open(summary_file, 'w') as f:
         f.write("Testnet One Order Report\n")

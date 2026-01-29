@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
+from .config import REPORTS_DIR
+
 
 @dataclass(frozen=True)
 class Rule:
@@ -16,14 +18,25 @@ class Rule:
     protect_substrings: Tuple[str, ...] = ("latest", "history", ".gitkeep")
 
 
+def get_reports_glob_pattern() -> str:
+    """Get the glob pattern for reports directory, handling both relative and absolute paths."""
+    try:
+        # Try to get relative path from current working directory
+        rel_path = REPORTS_DIR.relative_to(Path.cwd())
+        return str(rel_path)
+    except ValueError:
+        # If REPORTS_DIR is outside cwd, use absolute path
+        return str(REPORTS_DIR)
+
+
 DEFAULT_RULES: List[Rule] = [
     Rule("scripts/logs/daily_run_*.log", keep_days=30),
     Rule("reports/daily_body_*.txt", keep_days=30),
     Rule("reports/*.json", keep_days=30),
-    Rule("trader/reports/reconcile_*.txt", keep_days=30),
-    Rule("trader/reports/reconcile_*.json", keep_days=30),
-    Rule("trader/reports/go_nogo_*.txt", keep_days=30),
-    Rule("trader/reports/alert_sent_*.flag", keep_days=7),
+    Rule(f"{get_reports_glob_pattern()}/reconcile_*.txt", keep_days=30),
+    Rule(f"{get_reports_glob_pattern()}/reconcile_*.json", keep_days=30),
+    Rule(f"{get_reports_glob_pattern()}/go_nogo_*.txt", keep_days=30),
+    Rule(f"{get_reports_glob_pattern()}/alert_sent_*.flag", keep_days=7),
 ]
 
 
@@ -99,7 +112,8 @@ def main() -> int:
         keep = r.keep_days
         if r.glob.startswith("scripts/logs/"):
             keep = args.keep_days_logs
-        if r.glob.startswith("reports/") or r.glob.startswith("trader/reports/"):
+        reports_pattern = get_reports_glob_pattern()
+        if r.glob.startswith("reports/") or r.glob.startswith(reports_pattern):
             keep = args.keep_days_reports
         rules.append(Rule(r.glob, keep, r.protect_substrings))
 

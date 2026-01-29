@@ -37,3 +37,12 @@ apps/compack/logs/
 **/data/memory/
 **/data/memory/**
 
+
+# local diff dumps
+_kiro_diffs/
+
+
+# trader reports (generated)
+trader/reports/*.json
+trader/reports/*.csv
+

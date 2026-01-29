@@ -21,6 +21,27 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Resolve reports dir (env wins)
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  $reportDir = $env:TRADER_REPORTS_DIR
+}
+
+# If still empty, ask python config (last resort)
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  try {
+    $reportDir = (python -c "from trader.config import REPORTS_DIR; print(REPORTS_DIR)" 2>$null).Trim()
+  } catch { }
+}
+
+# Final fallback to repo default
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+  $reportDir = Join-Path $projectRoot "trader\reports"
+}
+
+New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+Write-Host "[INFO] REPORTS_DIR=$reportDir"
+
 # ✅ project root を確実に決める（scripts の1つ上）
 $ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $ProjectRoot
@@ -124,7 +145,7 @@ if ($Session -eq "noon") {
     "--ma-short","20","--ma-long","100",
     "--risk-pct","0.25",
     "--jpy-per-usdt","150",
-    "--out-dir","trader/reports"
+    "--out-dir",$reportDir
   )
 
   Write-Log "Running auth smoke test for noon..."

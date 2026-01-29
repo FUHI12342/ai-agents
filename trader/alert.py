@@ -17,7 +17,8 @@ def send_alert_once(subject: str, body: str, to: Optional[str] = None) -> bool:
     Returns True if sent, False if already sent today.
     """
     today = time.strftime('%Y%m%d')
-    flag_file = BASE_DIR / "reports" / f"alert_sent_{today}.flag"
+    from .config import REPORTS_DIR
+    flag_file = REPORTS_DIR / f"alert_sent_{today}.flag"
 
     if flag_file.exists():
         print(f"[ALERT] Already sent today: {flag_file}")

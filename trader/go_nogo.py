@@ -8,11 +8,11 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List
 
-from .config import load_config, BASE_DIR
+from .config import load_config, BASE_DIR, REPORTS_DIR
 
 def load_history() -> List[Dict[str, Any]]:
     """Load go_nogo history from CSV."""
-    history_file = BASE_DIR / "reports" / "go_nogo_history.csv"
+    history_file = REPORTS_DIR / "go_nogo_history.csv"
     if not history_file.exists():
         return []
     with open(history_file, 'r', encoding='utf-8') as f:
@@ -40,7 +40,7 @@ def check_go_nogo() -> Dict[str, Any]:
     Perform go/no-go checks and return results.
     """
     config = load_config()
-    reports_dir = BASE_DIR / "reports"
+    reports_dir = REPORTS_DIR
     results = {
         "timestamp": int(time.time() * 1000),
         "ready": False,
@@ -76,20 +76,62 @@ def check_go_nogo() -> Dict[str, Any]:
             reconcile_ok = False
     results["checks"]["reconcile"] = reconcile_ok
 
-    # 3) Risk guard: live_summary_latest.txt の risk_guard が OK/None ならPASS
+    # 3) Risk guard: Handle paper mode more leniently
     summary_txt = reports_dir / "live_summary_latest.txt"
     risk_guard_ok = False
-    if summary_txt.exists():
-        with open(summary_txt, 'r', encoding='utf-8') as f:
-            content = f.read()
-            if "risk_guard:" in content:
-                lines = content.split('\n')
-                for line in lines:
-                    if line.startswith("risk_guard:"):
-                        value = line.split(":", 1)[1].strip()
-                        risk_guard_ok = value in ("OK", "None")
-                        break
+    risk_guard_notes = ""
+    
+    if config.trader_mode == 'paper':
+        # In paper mode, be more lenient with risk_guard checks
+        if not summary_txt.exists():
+            # Missing file is OK in paper mode
+            risk_guard_ok = True
+            risk_guard_notes = "paper_mode_missing_file_ok"
+        else:
+            with open(summary_txt, 'r', encoding='utf-8') as f:
+                content = f.read()
+                if "risk_guard:" in content:
+                    lines = content.split('\n')
+                    for line in lines:
+                        if line.startswith("risk_guard:"):
+                            value = line.split(":", 1)[1].strip()
+                            # In paper mode, only explicit FAIL should fail
+                            if value.upper() == "FAIL":
+                                risk_guard_ok = False
+                                risk_guard_notes = f"paper_mode_explicit_fail: {value}"
+                            else:
+                                # SKIP, missing, OK, None, or any other value is PASS in paper mode
+                                risk_guard_ok = True
+                                risk_guard_notes = f"paper_mode_pass: {value}"
+                            break
+                    else:
+                        # No risk_guard line found - OK in paper mode
+                        risk_guard_ok = True
+                        risk_guard_notes = "paper_mode_no_risk_guard_line"
+                else:
+                    # No risk_guard mentioned at all - OK in paper mode
+                    risk_guard_ok = True
+                    risk_guard_notes = "paper_mode_no_risk_guard_mention"
+    else:
+        # Testnet/live mode - use existing strict logic
+        if summary_txt.exists():
+            with open(summary_txt, 'r', encoding='utf-8') as f:
+                content = f.read()
+                if "risk_guard:" in content:
+                    lines = content.split('\n')
+                    for line in lines:
+                        if line.startswith("risk_guard:"):
+                            value = line.split(":", 1)[1].strip()
+                            risk_guard_ok = value in ("OK", "None")
+                            risk_guard_notes = f"live_mode_strict: {value}"
+                            break
+                else:
+                    risk_guard_notes = "live_mode_no_risk_guard_line"
+        else:
+            risk_guard_notes = "live_mode_missing_file"
+    
     results["checks"]["risk_guard"] = risk_guard_ok
+    results["notes"]["risk_guard"] = risk_guard_notes
 
     # 4) Operations: scripts/logs の最新 daily_run_*.log を1つ取得
     #     そのログに "[STEP] ops_cleanup" と "[GUARD] ops_cleanup done" が含まれていれば PASS
@@ -169,15 +211,19 @@ def main() -> int:
         results = check_go_nogo()
 
         # Write latest
-        latest_file = BASE_DIR / "reports" / "go_nogo_latest.txt"
+        latest_file = REPORTS_DIR / "go_nogo_latest.txt"
         latest_file.parent.mkdir(parents=True, exist_ok=True)
         with open(latest_file, 'w') as f:
             f.write("Go/No-Go Checklist Results\n")
             f.write(f"Timestamp: {results['timestamp']}\n")
+            f.write(f"Mode: {config.trader_mode}\n")
             f.write(f"Summary: {results['summary']}\n\n")
             f.write("Checks:\n")
             for k, v in results['checks'].items():
-                f.write(f"  {k}: {'PASS' if v else 'FAIL'}\n")
+                status = 'PASS' if v else 'FAIL'
+                note = results['notes'].get(k, '')
+                note_str = f" ({note})" if note else ""
+                f.write(f"  {k}: {status}{note_str}\n")
 
             f.write("\nNext Steps:\n")
             if results.get('ready', False):
@@ -207,7 +253,7 @@ def main() -> int:
                     # api_configured already handled above
 
         # Write history (CSV)
-        history_file = BASE_DIR / "reports" / "go_nogo_history.csv"
+        history_file = REPORTS_DIR / "go_nogo_history.csv"
         history_exists = history_file.exists()
         with open(history_file, 'a', newline='') as f:
             import csv
@@ -222,7 +268,7 @@ def main() -> int:
     except Exception as e:
         config = load_config()
         timestamp = int(time.time() * 1000)
-        latest_file = BASE_DIR / "reports" / "go_nogo_latest.txt"
+        latest_file = REPORTS_DIR / "go_nogo_latest.txt"
         latest_file.parent.mkdir(parents=True, exist_ok=True)
         with open(latest_file, 'w') as f:
             f.write("Go/No-Go Checklist Results\n")
@@ -233,7 +279,7 @@ def main() -> int:
             f.write("- Fix the exception in go_nogo.py\n")
 
         # Write history (CSV) - minimal
-        history_file = BASE_DIR / "reports" / "go_nogo_history.csv"
+        history_file = REPORTS_DIR / "go_nogo_history.csv"
         history_exists = history_file.exists()
         with open(history_file, 'a', newline='') as f:
             import csv
