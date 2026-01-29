@@ -7,7 +7,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
 ## Tasks
 
 - [ ] 1. Create strategy plugin foundation
-  - [ ] 1.1 Implement Strategy Protocol interface and StrategyResult dataclass
+  - [x] 1.1 Implement Strategy Protocol interface and StrategyResult dataclass
     - Create trader/strategies/base.py with Strategy Protocol and StrategyResult
     - Define compute method signature and property requirements
     - Add type hints and documentation
@@ -17,7 +17,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - **Property 3: Strategy Interface Compliance**
     - **Validates: Requirements 1.5, 1.6**
 
-  - [ ] 1.3 Implement Strategy Registry core functionality
+  - [x] 1.3 Implement Strategy Registry core functionality
     - Create trader/strategies/registry.py with StrategyRegistry class
     - Implement get_strategy, list_strategies, resolve_strategy methods
     - Add StrategyInfo dataclass for metadata
@@ -28,7 +28,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - **Validates: Requirements 1.1, 1.2, 1.3**
 
 - [ ] 2. Implement core trading strategies
-  - [ ] 2.1 Refactor existing MA cross strategy to use new interface
+  - [x] 2.1 Refactor existing MA cross strategy to use new interface
     - Update trader/strategies/ma_cross.py to implement Strategy Protocol
     - Convert calculate_ma_cross_signal to compute method
     - Add parameter schema and metadata properties
@@ -39,7 +39,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - Test parameter configuration and edge cases
     - _Requirements: 2.3, 7.2_
 
-  - [ ] 2.3 Implement BB Squeeze strategy
+  - [x] 2.3 Implement BB Squeeze strategy
     - Create trader/strategies/bb_squeeze.py with Bollinger Band squeeze logic
     - Implement volatility expansion detection algorithm
     - Add configurable parameters (bb_period, bb_std, squeeze_threshold)
@@ -50,7 +50,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - **Property 5: Volume Independence for BB Squeeze**
     - **Validates: Requirements 2.4**
 
-  - [ ] 2.5 Implement Breakout Volume strategy
+  - [x] 2.5 Implement Breakout Volume strategy
     - Create trader/strategies/breakout_volume.py with range breakout logic
     - Implement volume filter validation
     - Add configurable parameters (lookback_period, volume_threshold)
@@ -65,7 +65,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Integrate strategies with registry system
-  - [ ] 4.1 Register all strategies in registry
+  - [x] 4.1 Register all strategies in registry
     - Update trader/strategies/__init__.py to export registry
     - Register ma_cross, bb_squeeze, breakout_volume strategies
     - Set bb_squeeze as default strategy
@@ -75,7 +75,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - **Property 4: Strategy Implementation Availability**
     - **Validates: Requirements 2.1, 2.2, 2.3, 7.2**
 
-  - [ ] 4.3 Implement volume fallback resolution logic
+  - [x] 4.3 Implement volume fallback resolution logic
     - Add resolve_strategy method with DataFrame analysis
     - Implement automatic fallback to bb_squeeze when volume missing
     - Add logging for fallback events
@@ -86,7 +86,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - **Validates: Requirements 2.6, 3.4, 7.1**
 
 - [ ] 5. Update entry points for strategy selection
-  - [ ] 5.1 Update run_paper_sim.py for strategy support
+  - [x] 5.1 Update run_paper_sim.py for strategy support
     - Add --strategy CLI argument parsing
     - Add TRADER_STRATEGY environment variable support
     - Integrate with strategy registry for strategy selection
@@ -128,7 +128,7 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - _Requirements: 4.7_
 
 - [ ] 7. Fix go/no-go risk guard for paper mode
-  - [ ] 7.1 Update go_nogo.py risk guard logic for paper mode
+  - [x] 7.1 Update go_nogo.py risk guard logic for paper mode
     - Modify risk_guard check to treat missing live_summary_latest.txt as PASS in paper mode
     - Handle risk_guard values of SKIP/missing as PASS in paper mode
     - Only FAIL when risk_guard explicitly contains FAIL in paper mode
@@ -144,13 +144,13 @@ This implementation plan transforms the existing hardcoded MA cross trading syst
     - **Validates: Requirements 5.4**
 
 - [ ] 8. Implement configurable output directory support
-  - [ ] 8.1 Update configuration system for TRADER_REPORTS_DIR
+  - [x] 8.1 Update configuration system for TRADER_REPORTS_DIR
     - Modify trader/config.py to handle TRADER_REPORTS_DIR environment variable
     - Update all file output paths to use configurable reports directory
     - Default to trader/reports when TRADER_REPORTS_DIR not specified
     - _Requirements: 6.1, 6.2_
 
-  - [ ] 8.2 Update all output file generation to use configurable directory
+  - [x] 8.2 Update all output file generation to use configurable directory
     - Update paper_trades_history.csv output path
     - Update signals_latest.json output path
     - Update signals_chart_latest.png output path

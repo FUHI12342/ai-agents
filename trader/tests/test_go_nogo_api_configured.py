@@ -39,15 +39,15 @@ class TestGoNoGoAPIConfigured:
     @patch('trader.go_nogo.load_config')
     @patch('trader.go_nogo.load_history', return_value=[])
     @patch('trader.go_nogo.BASE_DIR', new_callable=lambda: Path(tempfile.mkdtemp()))
-    def test_paper_yahoo_candles_zero_fail(self, mock_base_dir, mock_load_history, mock_load_config):
+    @patch('trader.go_nogo.REPORTS_DIR', new_callable=lambda: Path(tempfile.mkdtemp()) / "reports")
+    def test_paper_yahoo_candles_zero_fail(self, mock_reports_dir, mock_base_dir, mock_load_history, mock_load_config):
         mock_config = MagicMock()
         mock_config.trader_mode = 'paper'
         mock_config.is_api_configured.return_value = True
         mock_load_config.return_value = mock_config
 
-        reports_dir = mock_base_dir / "reports"
-        reports_dir.mkdir()
-        summary_file = reports_dir / "paper_yahoo_summary_latest.txt"
+        mock_reports_dir.mkdir(parents=True, exist_ok=True)
+        summary_file = mock_reports_dir / "paper_yahoo_summary_latest.txt"
         # Simulate summary with candles=0
         summary_file.write_text("""
 Yahoo PaperTrade Simulation (MA cross) 2023/01/01 12:00:00
@@ -70,15 +70,15 @@ Files
     @patch('trader.go_nogo.load_config')
     @patch('trader.go_nogo.load_history', return_value=[])
     @patch('trader.go_nogo.BASE_DIR', new_callable=lambda: Path(tempfile.mkdtemp()))
-    def test_paper_yahoo_valid_pass(self, mock_base_dir, mock_load_history, mock_load_config):
+    @patch('trader.go_nogo.REPORTS_DIR', new_callable=lambda: Path(tempfile.mkdtemp()) / "reports")
+    def test_paper_yahoo_valid_pass(self, mock_reports_dir, mock_base_dir, mock_load_history, mock_load_config):
         mock_config = MagicMock()
         mock_config.trader_mode = 'paper'
         mock_config.is_api_configured.return_value = True
         mock_load_config.return_value = mock_config
 
-        reports_dir = mock_base_dir / "reports"
-        reports_dir.mkdir()
-        summary_file = reports_dir / "paper_yahoo_summary_latest.txt"
+        mock_reports_dir.mkdir(parents=True, exist_ok=True)
+        summary_file = mock_reports_dir / "paper_yahoo_summary_latest.txt"
         # Simulate valid summary
         summary_file.write_text("""
 Yahoo PaperTrade Simulation (MA cross) 2023/01/01 12:00:00

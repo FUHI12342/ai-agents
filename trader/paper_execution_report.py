@@ -58,7 +58,8 @@ def main() -> int:
     p.add_argument("--ma-long", type=int, default=100)
     p.add_argument("--risk-pct", type=float, default=0.25)
     p.add_argument("--jpy-per-usdt", type=float, default=150.0)
-    p.add_argument("--out-dir", default="trader/reports")
+    from .config import REPORTS_DIR
+    p.add_argument("--out-dir", default=str(REPORTS_DIR))
     args = p.parse_args()
 
     if ccxt is None:

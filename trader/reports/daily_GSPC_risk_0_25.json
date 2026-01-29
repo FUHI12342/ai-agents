@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-07 16:18:50",
+  "generated_at": "2026-01-28 23:00:07",
   "symbol": "^GSPC",
   "ma_short": 20,
   "ma_long": 100,
@@ -7,8 +7,8 @@
   "start": "2017-08-17",
   "end": null,
   "result": {
-    "final_equity": 11511.222511904027,
-    "return_pct": 15.112225119040268,
+    "final_equity": 11525.986989423322,
+    "return_pct": 15.259869894233224,
     "max_drawdown_pct": -6.403446761434882,
     "num_trades": 10
   }

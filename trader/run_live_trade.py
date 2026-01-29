@@ -331,7 +331,8 @@ def main():
     summary['reconcile_reason'] = reconcile_reason
 
     # Write summary
-    summary_file = BASE_DIR / "reports" / "live_summary_latest.txt"
+    from .config import REPORTS_DIR
+    summary_file = REPORTS_DIR / "live_summary_latest.txt"
     summary_file.parent.mkdir(parents=True, exist_ok=True)
     with open(summary_file, 'w') as f:
         for k, v in summary.items():

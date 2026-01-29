@@ -6,8 +6,11 @@ import json
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
+import pandas as pd
 
-from trader.paper_engine import PaperState, simulate_ma_cross
+from trader.paper_engine import PaperState, simulate_ma_cross, simulate_strategy
+from trader.strategies import registry
+from trader.config import REPORTS_DIR
 
 try:
     import ccxt  # type: ignore
@@ -90,11 +93,12 @@ def append_history(path: str, rows: List[Dict[str, Any]]) -> None:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="True paper trading simulation (MA cross) with trade logs + equity updates")
+    p = argparse.ArgumentParser(description="True paper trading simulation with strategy plugins")
     p.add_argument("--capital", type=float, default=10000.0, help="Initial virtual capital in JPY (used when no state exists)")
     p.add_argument("--symbols", default="BTCUSDT", help="Comma-separated, e.g. BTCUSDT,ETHUSDT")
-    p.add_argument("--ma-short", type=int, default=20)
-    p.add_argument("--ma-long", type=int, default=100)
+    p.add_argument("--ma-short", type=int, default=20, help="MA short period (for ma_cross strategy)")
+    p.add_argument("--ma-long", type=int, default=100, help="MA long period (for ma_cross strategy)")
+    p.add_argument("--strategy", default=None, help="Strategy ID (bb_squeeze, breakout_volume, ma_cross). Uses TRADER_STRATEGY env var if not specified")
     p.add_argument("--risk-pct", type=float, default=0.25)
     p.add_argument("--fee-rate", type=float, default=0.0005)
     p.add_argument("--slippage-bps", type=float, default=5.0)
@@ -102,13 +106,26 @@ def main() -> int:
     p.add_argument("--steps", type=int, default=500, help="How many candles to fetch (plus lookback)")
     p.add_argument("--jpy-per-usdt", type=float, default=150.0)
     p.add_argument("--state-file", default=r"D:\ai-data\paper_state.json")
-    p.add_argument("--out-dir", default=os.path.join("trader", "reports"))
+    p.add_argument("--out-dir", default=str(REPORTS_DIR), help="Output directory for reports (uses TRADER_REPORTS_DIR env var)")
     p.add_argument("--data-dir", default=None, help="Unused (for compatibility)")
     args = p.parse_args()
 
     if ccxt is None:
         print("ERROR: ccxt is not installed. Install with: python -m pip install ccxt")
         return 2
+
+    # Determine strategy to use
+    strategy_id = args.strategy or os.getenv("TRADER_STRATEGY")
+    
+    # List available strategies if requested
+    if strategy_id == "list":
+        print("Available strategies:")
+        for strategy_info in registry.list_strategies():
+            recommended = " (recommended)" if strategy_info.recommended else ""
+            print(f"  {strategy_info.id}: {strategy_info.name}{recommended}")
+            print(f"    {strategy_info.description}")
+            print(f"    Requires volume: {strategy_info.requires_volume}")
+        return 0
 
     symbols = [s.strip() for s in args.symbols.split(",") if s.strip()]
     out_dir = os.path.abspath(args.out_dir)
@@ -122,7 +139,7 @@ def main() -> int:
     latest_rows: List[Dict[str, Any]] = []
     summary_lines: List[str] = []
     now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    summary_lines.append(f"PaperTrade Simulation (MA cross) {now}")
+    summary_lines.append(f"PaperTrade Simulation (Strategy: {strategy_id or 'default'}) {now}")
     summary_lines.append(f"JPY/USDT assumed: {jpy_per_usdt:.4f}")
     summary_lines.append("")
 
@@ -162,16 +179,59 @@ def main() -> int:
             data.append((int(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5])))
 
         before_trades_total = state.trades_total
-        state, new_trades, equity_curve = simulate_ma_cross(
-            data,
-            state,
-            ma_short=args.ma_short,
-            ma_long=args.ma_long,
-            risk_pct=args.risk_pct,
-            fee_rate=args.fee_rate,
-            slippage_bps=args.slippage_bps,
-            symbol=sym,
-        )
+        
+        # Determine which simulation to use
+        if strategy_id == "ma_cross":
+            # Use legacy MA cross simulation for backward compatibility
+            state, new_trades, equity_curve = simulate_ma_cross(
+                data,
+                state,
+                ma_short=args.ma_short,
+                ma_long=args.ma_long,
+                risk_pct=args.risk_pct,
+                fee_rate=args.fee_rate,
+                slippage_bps=args.slippage_bps,
+                symbol=sym,
+            )
+        else:
+            # Use strategy-based simulation
+            # Convert OHLCV data to DataFrame for strategy resolution
+            df_for_strategy = pd.DataFrame([
+                {
+                    'timestamp': row[0],
+                    'open': row[1],
+                    'high': row[2],
+                    'low': row[3],
+                    'close': row[4],
+                    'volume': row[5] if len(row) > 5 else 0.0
+                }
+                for row in data
+            ])
+            
+            # Resolve strategy with fallback logic
+            strategy = registry.resolve_strategy(strategy_id, df_for_strategy)
+            
+            # Prepare strategy parameters
+            strategy_params = {}
+            if hasattr(strategy, '__class__') and strategy.__class__.__name__ == 'MACrossStrategy':
+                strategy_params = {
+                    'ma_short': args.ma_short,
+                    'ma_long': args.ma_long
+                }
+            
+            # Store strategy ID for metadata
+            strategy._strategy_id = strategy_id or 'bb_squeeze'
+            
+            state, new_trades, equity_curve = simulate_strategy(
+                data,
+                state,
+                strategy,
+                risk_pct=args.risk_pct,
+                fee_rate=args.fee_rate,
+                slippage_bps=args.slippage_bps,
+                symbol=sym,
+                strategy_params=strategy_params,
+            )
 
         # current equity at last close (if exists)
         last_close = data[-1][4] if data else 0.0

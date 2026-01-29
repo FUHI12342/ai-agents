@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+import pandas as pd
 
 # OHLCV: (ts_ms, open, high, low, close, volume)
 OHLCV = Tuple[int, float, float, float, float, float]
@@ -168,6 +169,162 @@ def simulate_ma_cross(
                 state.max_drawdown_pct = dd
 
         state.prev_diff = diff
+        state.last_ts = ts
+
+    return state, new_trades, equity_curve
+
+
+def simulate_strategy(
+    ohlcv: Sequence[OHLCV],
+    state: PaperState,
+    strategy,  # Strategy instance
+    *,
+    risk_pct: float,
+    fee_rate: float,
+    slippage_bps: float,
+    symbol: str,
+    strategy_params: Optional[Dict[str, Any]] = None,
+) -> Tuple[PaperState, List[Dict[str, Any]], List[Tuple[int, float]]]:
+    """
+    Generic strategy-based paper simulation.
+    
+    Uses any strategy that implements the Strategy protocol to generate signals,
+    then executes trades based on those signals.
+    
+    Returns: (updated_state, new_trades, equity_curve_ts_quote)
+    """
+    if not ohlcv:
+        return state, [], []
+    
+    risk_pct = max(0.0, min(float(risk_pct), 1.0))
+    fee_rate = max(0.0, float(fee_rate))
+    slip = _slip_factor(slippage_bps)
+    strategy_params = strategy_params or {}
+
+    new_trades: List[Dict[str, Any]] = []
+    equity_curve: List[Tuple[int, float]] = []
+
+    def mark_equity(close_price: float) -> float:
+        return state.cash_quote + state.pos_base * close_price
+
+    # Convert OHLCV sequence to DataFrame for strategy
+    data = []
+    for ts, o, h, l, c, v in ohlcv:
+        data.append({
+            'timestamp': ts,
+            'open': float(o),
+            'high': float(h),
+            'low': float(l),
+            'close': float(c),
+            'volume': float(v) if v is not None else 0.0
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # Process each candle
+    for i, (ts, o, h, l, c, v) in enumerate(ohlcv):
+        close = float(c)
+        
+        # Skip candles we've already processed
+        if state.last_ts is not None and ts <= state.last_ts:
+            continue
+        
+        # Get strategy signal using data up to current point
+        current_df = df.iloc[:i+1]
+        
+        try:
+            result = strategy.compute(current_df, **strategy_params)
+            signal = result.signal
+            reasons = result.meta.get('reasons', [])
+            
+            # Store strategy metadata for potential use in signals output
+            strategy_meta = {
+                'strategy_result': result,
+                'strategy_id': getattr(strategy, '_strategy_id', 'unknown'),
+                'fallback_info': getattr(strategy, '_fallback_info', None)
+            }
+            
+        except Exception as e:
+            # Strategy error - no signal
+            signal = 0
+            reasons = [f"strategy_error: {str(e)}"]
+            strategy_meta = {'error': str(e)}
+        
+        reason = ""
+        
+        # Execute trades based on signal
+        if signal == 1 and state.cash_quote > 0.0 and risk_pct > 0.0:
+            # BUY signal
+            invest = state.cash_quote * risk_pct
+            exec_price = close * (1.0 + slip)
+            qty = invest / exec_price if exec_price > 0 else 0.0
+            notional = qty * exec_price
+            fee = notional * fee_rate
+
+            # Apply trade
+            state.cash_quote -= (notional + fee)
+            state.pos_base += qty
+            state.trades_total += 1
+            reason = f"strategy_buy_{'+'.join(reasons)}" if reasons else "strategy_buy"
+
+            trade_record = {
+                "time_ms": ts,
+                "symbol": symbol,
+                "side": "BUY",
+                "price": exec_price,
+                "qty": qty,
+                "notional_quote": notional,
+                "fee_quote": fee,
+                "cash_quote_after": state.cash_quote,
+                "pos_base_after": state.pos_base,
+                "reason": reason,
+            }
+            
+            # Add strategy metadata to trade record
+            trade_record.update(strategy_meta)
+            new_trades.append(trade_record)
+
+        elif signal == -1 and state.pos_base > 0.0:
+            # SELL signal - close all positions
+            qty = state.pos_base
+            exec_price = close * (1.0 - slip)
+            notional = qty * exec_price
+            fee = notional * fee_rate
+
+            state.pos_base = 0.0
+            state.cash_quote += (notional - fee)
+            state.trades_total += 1
+            reason = f"strategy_sell_{'+'.join(reasons)}" if reasons else "strategy_sell"
+
+            trade_record = {
+                "time_ms": ts,
+                "symbol": symbol,
+                "side": "SELL",
+                "price": exec_price,
+                "qty": qty,
+                "notional_quote": notional,
+                "fee_quote": fee,
+                "cash_quote_after": state.cash_quote,
+                "pos_base_after": state.pos_base,
+                "reason": reason,
+            }
+            
+            # Add strategy metadata to trade record
+            trade_record.update(strategy_meta)
+            new_trades.append(trade_record)
+
+        # Update equity and drawdown tracking
+        eq = mark_equity(close)
+        equity_curve.append((ts, eq))
+
+        if state.peak_equity_quote is None or eq > state.peak_equity_quote:
+            state.peak_equity_quote = eq
+
+        if state.peak_equity_quote and state.peak_equity_quote > 0:
+            dd = (eq / state.peak_equity_quote - 1.0) * 100.0  # negative when drawdown
+            if dd < state.max_drawdown_pct:
+                state.max_drawdown_pct = dd
+
         state.last_ts = ts
 
     return state, new_trades, equity_curve
