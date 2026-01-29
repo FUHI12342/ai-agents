@@ -37,3 +37,7 @@ apps/compack/logs/
 **/data/memory/
 **/data/memory/**
 
+
+# local diff dumps
+_kiro_diffs/
+
