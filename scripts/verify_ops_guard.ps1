@@ -6,6 +6,27 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Resolve reports dir (env wins)
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  $reportDir = $env:TRADER_REPORTS_DIR
+}
+
+# If still empty, ask python config (last resort)
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  try {
+    $reportDir = (python -c "from trader.config import REPORTS_DIR; print(REPORTS_DIR)" 2>$null).Trim()
+  } catch { }
+}
+
+# Final fallback to repo default
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+  $reportDir = Join-Path $projectRoot "trader\reports"
+}
+
+New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+Write-Host "[INFO] REPORTS_DIR=$reportDir"
+
 function Say($s){ Write-Host $s }
 
 Say "=== VERIFY OPS GUARD ==="
@@ -43,17 +64,17 @@ Say "`n[3] Guard signals"
 Grep $log.FullName "\[GUARD\]|\[WARN\]|\[ERROR\]|\[SKIP\]"
 
 Say "`n[4] Paper outputs exist?"
-$paperSummary = ".\trader\reports\paper_summary_latest.txt"
-$paperLatest  = ".\trader\reports\paper_trades_latest.csv"
-$paperHist    = ".\trader\reports\paper_trades_history.csv"
+$paperSummary = Join-Path $reportDir "paper_summary_latest.txt"
+$paperLatest  = Join-Path $reportDir "paper_trades_latest.csv"
+$paperHist    = Join-Path $reportDir "paper_trades_history.csv"
 Say ("paper_summary_latest.txt : {0}" -f (Test-Path $paperSummary))
 Say ("paper_trades_latest.csv  : {0}" -f (Test-Path $paperLatest))
 Say ("paper_trades_history.csv : {0}" -f (Test-Path $paperHist))
 
 Say "`n[4b] Live outputs exist?"
-$liveSummary = ".\trader\reports\live_summary_latest.txt"
-$reconcileLatest = ".\trader\reports\reconcile_latest.txt"
-$gonogoLatest = ".\trader\reports\go_nogo_latest.txt"
+$liveSummary = Join-Path $reportDir "live_summary_latest.txt"
+$reconcileLatest = Join-Path $reportDir "reconcile_latest.txt"
+$gonogoLatest = Join-Path $reportDir "go_nogo_latest.txt"
 Say ("live_summary_latest.txt : {0}" -f (Test-Path $liveSummary))
 Say ("reconcile_latest.txt    : {0}" -f (Test-Path $reconcileLatest))
 Say ("go_nogo_latest.txt      : {0}" -f (Test-Path $gonogoLatest))

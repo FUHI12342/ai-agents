@@ -47,7 +47,7 @@ def main():
     broker = create_broker(config)
 
     # Ledger
-    ledger = Ledger(BASE_DIR / "reports")
+    ledger = Ledger(REPORTS_DIR)
 
     # Symbols
     symbols = [s.strip() for s in config.trader_symbols.split(',') if s.strip()]
@@ -316,7 +316,7 @@ def main():
             print(f"[WARN] Post-run reconcile failed: {result.stderr}")
             # Optionally create KILL_SWITCH, but for now just warn
         # Read reconcile_latest.json for reason
-        reconcile_json_file = BASE_DIR / "reports" / "reconcile_latest.json"
+        reconcile_json_file = REPORTS_DIR / "reconcile_latest.json"
         if reconcile_json_file.exists():
             try:
                 with open(reconcile_json_file, 'r') as f:

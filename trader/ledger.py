@@ -9,7 +9,8 @@ from .config import BASE_DIR
 class Ledger:
     def __init__(self, reports_dir: Optional[Path] = None):
         if reports_dir is None:
-            reports_dir = BASE_DIR / "reports"
+            from .config import REPORTS_DIR
+            reports_dir = REPORTS_DIR
         reports_dir.mkdir(parents=True, exist_ok=True)
         self.reports_dir = reports_dir
         self.run_id = str(uuid.uuid4())[:8]  # Short ID for this run

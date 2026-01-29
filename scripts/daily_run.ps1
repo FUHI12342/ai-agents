@@ -14,9 +14,25 @@ $scriptDir   = Split-Path -Parent $scriptPath
 $projectRoot = (Resolve-Path (Join-Path $scriptDir "..")).Path
 Set-Location -Path $projectRoot
 
+# Resolve reports dir (env wins)
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  $reportDir = $env:TRADER_REPORTS_DIR
+}
+
+# If still empty, ask python config (last resort)
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  try {
+    $reportDir = (python -c "from trader.config import REPORTS_DIR; print(REPORTS_DIR)" 2>$null).Trim()
+  } catch { }
+}
+
+# Final fallback to repo default
+if (-not $reportDir -or [string]::IsNullOrWhiteSpace($reportDir)) {
+  $reportDir = Join-Path $projectRoot "trader\reports"
+}
+
 $python    = Join-Path $projectRoot ".venv\Scripts\python.exe"
 $logDir    = Join-Path $scriptDir "logs"
-$reportDir = Join-Path $projectRoot "trader\reports"
 $bodyDir   = Join-Path $projectRoot "reports"
 
 New-Item -ItemType Directory -Force -Path $logDir    | Out-Null
@@ -151,7 +167,7 @@ try {
       "--timeframe","1h",
       "--steps","500",
       "--state-file","D:\ai-data\paper_state.json",
-      "--out-dir","trader\reports"
+      "--out-dir",$reportDir
     )
     # Generate paper execution summary
     $rc_paper_exec = Invoke-Exe "paper_execution_report" $python @(
@@ -161,7 +177,7 @@ try {
       "--ma-short","20","--ma-long","100",
       "--risk-pct","0.25",
       "--jpy-per-usdt","150",
-      "--out-dir","trader\reports"
+      "--out-dir",$reportDir
     )
   } else {
     Write-Log "[STEP] paper_trade_sim (SKIP: KILL_SWITCH)"
@@ -176,7 +192,7 @@ try {
       "--ma-short","20","--ma-long","100",
       "--risk-pct","0.25",
       "--state-file","D:\ai-data\paper_state_yahoo.json",
-      "--out-dir","trader\reports"
+      "--out-dir",$reportDir
     )
     if ($rc_paper_yahoo -ne 0) {
       # Overwrite summary with FAIL content
@@ -352,7 +368,7 @@ timestamp=$timestamp
   $tail = Get-Content -LiteralPath $logFile -Tail 120 -ErrorAction SilentlyContinue
   foreach ($t in $tail) { $body += $t }
   # --- PaperTrade Summary (optional) ---
-  $paperSummary = Join-Path $projectRoot "trader\reports\paper_summary_latest.txt"
+  $paperSummary = Join-Path $reportDir "paper_summary_latest.txt"
   if (Test-Path -LiteralPath $paperSummary) {
     $body += ""
     $body += "PaperTrade Summary"
@@ -365,7 +381,7 @@ timestamp=$timestamp
   }
 
   # --- PaperYahoo Summary (optional) ---
-  $paperYahooSummary = Join-Path $projectRoot "trader\reports\paper_yahoo_summary_latest.txt"
+  $paperYahooSummary = Join-Path $reportDir "paper_yahoo_summary_latest.txt"
   if (Test-Path -LiteralPath $paperYahooSummary) {
     $body += ""
     $body += "PaperYahoo Summary"
@@ -378,7 +394,7 @@ timestamp=$timestamp
   }
 
   # --- Auth Smoke Summary (optional) ---
-  $authSmokeSummary = Join-Path $projectRoot "trader\reports\auth_smoke_latest.txt"
+  $authSmokeSummary = Join-Path $reportDir "auth_smoke_latest.txt"
   if (Test-Path -LiteralPath $authSmokeSummary) {
     $body += ""
     $body += "Auth Smoke Summary"
@@ -391,7 +407,7 @@ timestamp=$timestamp
   }
 
   # --- Live Summary (optional) ---
-  $liveSummary = Join-Path $projectRoot "trader\reports\live_summary_latest.txt"
+  $liveSummary = Join-Path $reportDir "live_summary_latest.txt"
   if (Test-Path -LiteralPath $liveSummary) {
     $body += ""
     $body += "Live Summary"
@@ -404,7 +420,7 @@ timestamp=$timestamp
   }
 
   # --- Reconcile Summary (optional) ---
-  $reconcileSummary = Join-Path $projectRoot "trader\reports\reconcile_latest.txt"
+  $reconcileSummary = Join-Path $reportDir "reconcile_latest.txt"
   if (Test-Path -LiteralPath $reconcileSummary) {
     $body += ""
     $body += "Reconcile Summary"
@@ -417,7 +433,7 @@ timestamp=$timestamp
   }
 
   # --- Go/No-Go Summary (optional) ---
-  $gonogoSummary = Join-Path $projectRoot "trader\reports\go_nogo_latest.txt"
+  $gonogoSummary = Join-Path $reportDir "go_nogo_latest.txt"
   if (Test-Path -LiteralPath $gonogoSummary) {
     $body += ""
     $body += "Go/No-Go Summary"
@@ -430,7 +446,7 @@ timestamp=$timestamp
   }
 
   # --- Paper Execution Summary (optional) ---
-  $paperExecSummary = Join-Path $projectRoot "trader\reports\paper_exec_summary_latest.txt"
+  $paperExecSummary = Join-Path $reportDir "paper_exec_summary_latest.txt"
   if (Test-Path -LiteralPath $paperExecSummary) {
     $body += ""
     $body += "Paper Execution Summary"
@@ -486,13 +502,13 @@ $text = ($body -join "`r`n")
     }
 
     # rotate paper history if too large
-    $paperHist = Join-Path $projectRoot "trader\reports\paper_trades_history.csv"
+    $paperHist = Join-Path $reportDir "paper_trades_history.csv"
     if (Test-Path -LiteralPath $paperHist) {
       $maxMB = 50
       $lenMB = (Get-Item -LiteralPath $paperHist).Length / 1MB
       if ($lenMB -gt $maxMB) {
         $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
-        $arch = Join-Path $projectRoot ("trader\reports\paper_trades_history_{0}.csv" -f $stamp)
+        $arch = Join-Path $reportDir ("paper_trades_history_{0}.csv" -f $stamp)
         Move-Item -LiteralPath $paperHist -Destination $arch -Force
         Write-Log ("[GUARD] rotated paper history: {0} -> {1}" -f $paperHist, $arch)
       }

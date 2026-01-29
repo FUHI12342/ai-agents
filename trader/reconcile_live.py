@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import ccxt
 
-from .config import load_config, BASE_DIR
+from .config import load_config, BASE_DIR, REPORTS_DIR
 from .brokers import create_broker
 from .ledger import Ledger
 
@@ -48,7 +48,7 @@ def main():
     else:
         try:
             broker = create_broker(config)
-            ledger = Ledger(BASE_DIR / "reports")
+            ledger = Ledger(REPORTS_DIR)
 
             # Get exchange data
             symbol = config.trader_symbols
@@ -101,13 +101,13 @@ def main():
             exit_code = 2
 
     # Write JSON
-    reconcile_json_file = BASE_DIR / "reports" / "reconcile_latest.json"
+    reconcile_json_file = REPORTS_DIR / "reconcile_latest.json"
     reconcile_json_file.parent.mkdir(parents=True, exist_ok=True)
     with open(reconcile_json_file, 'w') as f:
         json.dump(result, f, indent=2)
 
     # Write TXT
-    reconcile_file = BASE_DIR / "reports" / "reconcile_latest.txt"
+    reconcile_file = REPORTS_DIR / "reconcile_latest.txt"
     with open(reconcile_file, 'w') as f:
         f.write("Live Trading Reconciliation Report\n")
         f.write(f"Timestamp: {ts}\n")
