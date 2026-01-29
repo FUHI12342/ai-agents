@@ -41,3 +41,8 @@ apps/compack/logs/
 # local diff dumps
 _kiro_diffs/
 
+
+# trader reports (generated)
+trader/reports/*.json
+trader/reports/*.csv
+
